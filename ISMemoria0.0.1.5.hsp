@@ -1,0 +1,735 @@
+//InternetStroller WebView
+
+//ビルド時用設定
+#packopt hide 1
+#packopt version "Definition.dll"
+//#packopt icon "img.ico"
+screen 0, , , 2
+
+//以降ブラウザそのもののコード
+ISNAME="InternetStroller Memoria "
+ISVersion="ReleaseCandidate.1 Ver 0.0.1.5"
+ISBuildNumber="218"
+ISBuildDay="2023/02/23"
+//配布ビルド時は必ず0にすること、1にするとファイルチェックを無効出来るが...
+BypassCheckSum="0"
+title ISNAME+ISVersion+" - Initial Variable"
+screen 0, 1200,600
+if BypassCheckSum = "1" {title "Bypass CheckSum = 1"}
+if BypassCheckSum = "0" {
+//OSバージョン把握
+ title ISNAME+ISVersion+" - Understanding OS Ver"
+ if sysinfo(0) = "WindowsNT ver5.1" {gsel 0, 1
+	 dialog "WebView doesn't support Windows XP"
+	 end
+	 }
+ if sysinfo(0) = "WindowsNT ver5.2" {gsel 0, 1
+	 dialog "WebView doesn't support Windows Server 2003 / ReactOS"
+	 end
+	 }
+ if sysinfo(0) = "WindowsNT ver6.0" {gsel 0, 1
+	dialog "WebView doesn't support Windows Vista / Windows Server 2008"
+	end
+	}
+
+//Dllファイル確認
+ title ISNAME+ISVersion+" - FileChecksum"
+//WebView2Loader.dll
+ exist dirinfo(1) + "\\WebView2Loader.dll"
+ if strsize = -1 {gsel 0, 1
+	 title "WebView2Loader.dll not found"
+	 dialog "WebView2Loader.dll not found.\nPlease get it from the URL below.\n\nWebView2Loader.dllを、下記URLから取得してください\n\nWebView : https://www.nuget.org/api/v2/package/Microsoft.Web.WebView2/1.0.1418.22", 1, "WebView2Loader.dll not found"
+	 end
+ }
+ title ISNAME+ISVersion+" - Include IS_WebView_mod.dll"
+}
+//include内蔵(元IS_WebView_mod.dll)
+#ifndef MOD_WEBVIEW2_HSP_
+#define global MOD_WEBVIEW2_HSP_
+#include "user32.as"
+#include "kernel32.as"
+#ifndef CreateEventExA
+#func global CreateEventEx "CreateEventExA" int,int,int,int
+#endif // CreateEventExA
+#include "ole32.as"
+#ifndef SHCreateStreamOnFileEx
+#uselib "Shlwapi.dll"
+#func global SHCreateStreamOnFileEx "SHCreateStreamOnFileEx" wptr,int,int,int,int,var
+#endif // SHCreateStreamOnFileEx
+#uselib "combase.dll"
+#func global WindowsCreateString       "WindowsCreateString"       wptr,int,var
+#func global WindowsDeleteString       "WindowsDeleteString"       int
+#func global WindowsGetStringRawBuffer "WindowsGetStringRawBuffer" int,var
+#uselib "WebView2Loader.dll"
+#func global CreateCoreWebView2EnvironmentWithOptions     "CreateCoreWebView2EnvironmentWithOptions"     wptr,wptr,var,var
+#func global CreateCoreWebView2Environment                "CreateCoreWebView2Environment"                int
+#func global GetAvailableCoreWebView2BrowserVersionString "GetAvailableCoreWebView2BrowserVersionString" wptr,var
+#func global CompareBrowserVersions                       "CompareBrowserVersions"                       wptr,wptr,var
+#enum global WV2_EVENT_CAPTURE = 0
+#enum global WV2_EVENT_FULLSCREEN
+#enum global WV2_EVENT_CREATECTRL
+#enum global WV2_EVENT_CREATEENV
+#enum global WV2_EVENT_TITLECHANGED
+#enum global WV2_EVENT_EXECUTESCRIPT
+#enum global WV2_EVENT_NAVIGATIONCOMPLETED
+#enum global WV2_EVENT_NAVIGATIONSTARTING
+#enum global WV2_EVENT_NEWWINDOW
+#enum global WV2_EVENT_PRINTTOPDF
+#enum global WV2_EVENT_SOURCECHANGED
+#enum global WV2_EVENT_WINDOWCLOSE
+#enum global WV2_EVENT_MAX
+#enum global WV2_DATA_PT = 0
+#enum global WV2_DATA_VT
+#enum global WV2_DATA_WP
+#enum global WV2_DATA_LP
+#enum global WV2_DATA_HWND
+#enum global WV2_DATA_EVENT
+#enum global WV2_DATA_TOKENL
+#enum global WV2_DATA_TOKENH
+#enum global WV2_DATA_SIZE
+#ifndef MOD_COMCALL_HSP_
+#define global MOD_COMCALL_HSP_
+#module mod_ComCall
+#deffunc ComCall_Init
+	if ( codeComCall ){ return }
+	dim prm, 3
+	dim prm2, 4
+	dim codeComCall, 10
+	codeComCall(0) = $8bec8b55, $4d8b1045, $ff03eb14, $7d498834, $084d8bfa, $8b018b51, $048b0c55, $c9d0ff90
+	codeComCall(8) = $000000c3
+	fCCall = varptr(codeComCall)
+	VirtualProtect varptr(codeComCall), length(codeComCall) * 4, 0x40, varptr(p1)
+	return
+#defcfunc CCall int this_, int id_, array prm_, int prms_
+	if ( this_ == 0 ){ return 0 }
+	prm = this_, id_, varptr(prm_), prms_
+	return callfunc(prm, fCCall, 4)
+#defcfunc CCall2 int this_, int id_, int prms_, int p1_, int p2_, int p3_, int p4_
+	if ( prms_ != 0 ){
+		if ( prms_ == 1 ){ prm2 = p1_ }
+		else {
+		if ( prms_ == 2 ){ prm2 = p1_, p2_ }
+		else {
+		if ( prms_ == 3 ){ prm2 = p1_, p2_, p3_ }
+		else {
+		if ( prms_ == 4 ){ prm2 = p1_, p2_, p3_, p4_ }
+		}}}
+	}
+	return CCall(this_, id_, prm2, prms_)
+#global
+	ComCall_Init
+#endif
+#module mod_WebView2
+#deffunc WebView2_Init
+	if ( codeEH ){ return }
+	dim codeEH, 139
+	codeEH(  0) = $004002b8, $000cc280
+	codeEH(  2) = $04c2c033, $00000000
+	codeEH(  4) = $04c2c033, $00000000
+	codeEH(  6) = $08244c8b, $24748b56, $7c8b5708, $7e831424, $4e89000c, $087e8904, $51571d74, $c71076ff
+	codeEH( 14) = $aa1c2444, $ffaaaaaa, $448b0c76, $d0ff2024, $5ec0335f, $85000cc2, $8b0674c9, $50ff5101
+	codeEH( 22) = $74ff8504, $57078b06, $ff0450ff, $44c71076, $bbbb1424, $448bbbbb, $d0ff1424, $1046c75f
+	codeEH( 30) = $00000000, $c25ec033, $0000000c
+	codeEH( 33) = $0824448b, $5575c085, $0c244c8b, $24748b56, $04468908, $39084e89, $1c740c46, $76ff5051
+	codeEH( 41) = $2444c710, $aaaaaa18, $0c76ffaa, $1c24448b, $c033d0ff, $000cc25e, $0674c985, $ff51018b
+	codeEH( 49) = $76ff0450, $2444c710, $bbbbbb10, $24448bbb, $c7d0ff10, $00001046, $c0330000, $000cc25e
+	codeEH( 57) = $5c8b5351, $8b571024, $8310247c, $89000c7f, $2574045f, $18244c8b, $77ff5351, $084f8910
+	codeEH( 65) = $c70c77ff, $aa282444, $8baaaaaa, $ff28244c, $c38b5fd1, $0cc2595b, $24448d00, $2444c714
+	codeEH( 73) = $cccccc10, $74ff50cc, $44c71c24, $dddd1024, $448bdddd, $44c71824, $00001c24, $d0ff0000
+	codeEH( 81) = $2474ff50, $24448b20, $ffd0ff14, $c9331077, $440fc085, $8918244c, $44c7084f, $bbbb1c24
+	codeEH( 89) = $448bbbbb, $d0ff1c24, $001047c7, $8b000000, $595b5fc3, $00000cc2
+	codeEH( 95) = $0c24448b, $24748b56, $7c8b5708, $7e831024, $7e89000c, $08468904, $57501d74, $c71076ff
+	codeEH(103) = $aa1c2444, $ffaaaaaa, $4c8b0c76, $d1ff2024, $5e5fc78b, $ff000cc2, $44c71076, $bbbb1424
+	codeEH(111) = $448bbbbb, $d0ff1424, $46c7c78b, $00000010, $c25e5f00, $0000000c
+	codeEH(117) = $24748b56, $7c8b5708, $7e831024, $7e89000c, $0846c704, $00000000, $006a1e74, $1076ff57
+	codeEH(125) = $1c2444c7, $aaaaaaaa, $8b0c76ff, $ff20244c, $5fc78bd1, $0008c25e, $c71076ff, $bb142444
+	codeEH(133) = $8bbbbbbb, $ff142444, $c7c78bd0, $00001046, $5e5f0000, $000008c2
+	dim aTmp, 8
+	p1 = varptr(SendMessageA) : aTmp = 59, 169, 267, 415, 504
+	repeat 5 : lpoke codeEH, aTmp(cnt), p1 : loop
+	p1 = varptr(CloseHandle) : aTmp = 106, 205, 354, 442, 531
+	repeat 5 : lpoke codeEH, aTmp(cnt), p1 : loop
+	lpoke codeEH, 293, varptr(lstrlenW)
+	lpoke codeEH, 306, varptr(WindowsCreateString)
+	vtHdlIxI = varptr(codeEH(0)), varptr(codeEH(2)), varptr(codeEH(4)), varptr(codeEH(6))
+	vtHdlHxI = varptr(codeEH(0)), varptr(codeEH(2)), varptr(codeEH(4)), varptr(codeEH(33))
+	vtHdlHxW = varptr(codeEH(0)), varptr(codeEH(2)), varptr(codeEH(4)), varptr(codeEH(57))
+	vtHdlHxB = varptr(codeEH(0)), varptr(codeEH(2)), varptr(codeEH(4)), varptr(codeEH(95))
+	vtHdlH   = varptr(codeEH(0)), varptr(codeEH(2)), varptr(codeEH(4)), varptr(codeEH(117))
+	vtHdl = varptr(vtHdlIxI), varptr(vtHdlHxI), varptr(vtHdlHxW), varptr(vtHdlHxB), varptr(vtHdlH)
+	VirtualProtect varptr(codeEH), length(codeEH) * 4, 0x40, varptr(p1)
+	dim eVT, WV2_MAXHDL
+	eVT(0)  = 4, 0, 1, 1, 0, 2, 0, 0, 0, 3, 0, 0
+	return
+#deffunc WebView2_EventInit int enumEvent, int hWnd_, int nMsg, array aData
+	aData(WV2_DATA_PT) = varptr(aData(WV2_DATA_VT))
+	aData(WV2_DATA_VT) = vtHdl(eVT(enumEvent))
+	aData(WV2_DATA_EVENT) = enumEvent
+	if ( hWnd_ ){
+		aData(WV2_DATA_HWND) = hWnd_
+		aData(WV2_DATA_EVENT) = nMsg
+	}
+	else {
+		CreateEventEx 0, 0, 0, 0x1F0003
+		p1 = stat
+		if ( p1 == 0 ){ return 0 }
+		aData(WV2_DATA_EVENT) = p1
+		aData(WV2_DATA_HWND) = 0
+	}
+	return
+#deffunc WebView2_EventWait array aData
+	if ( aData(WV2_DATA_EVENT) == 0 ){ return 0 }
+	repeat
+		WaitForSingleObject aData(WV2_DATA_EVENT), 100
+		if ( stat == 0 || stat != 0x102 ){ break }
+		await 10
+	loop
+	return 1
+#deffunc WebView2_AddRef int pv
+	return CCall2(pv, 1, 0)
+#deffunc WebView2_Release int pv
+	return CCall2(pv, 2, 0)
+#defcfunc WebView2_CreateEnv
+	dim aEnv, WV2_DATA_SIZE
+	WebView2_EventInit WV2_EVENT_CREATEENV, 0, 0, aEnv
+	ret = 0
+	CreateCoreWebView2Environment aEnv
+	if ( stat == 0 ){
+		WebView2_EventWait aEnv
+		if ( aEnv(WV2_DATA_WP) == 0 && aEnv(WV2_DATA_LP) != 0 ){ ret = 1 }
+	}
+	if ( ret == 0 ){ return 0 }
+	return aEnv(WV2_DATA_LP)
+#defcfunc WebView2_CreateCtrl int pEnv, int hWnd_
+	dim aCtrl, WV2_DATA_SIZE
+	WebView2_EventInit WV2_EVENT_CREATECTRL, 0, 0, aCtrl
+	ret = 0
+	if ( CCall2(pEnv, 3, 2, hWnd_, aCtrl) == 0 ){
+		WebView2_EventWait aCtrl
+		if ( aCtrl(WV2_DATA_WP) == 0 && aCtrl(WV2_DATA_LP) != 0 ){ ret = 1 }
+	}
+	if ( ret == 0 ){ return 0 }
+	return aCtrl(WV2_DATA_LP)
+
+#defcfunc WebView2_GetView int pCtrl
+	if ( CCall2(pCtrl, 25, 1, varptr(p1)) ){ return 0 }
+	return p1
+#deffunc WebView2_Size int pCtrl, int x, int y, int w, int h
+	if ( CCall2(pCtrl, 6, 4, x, y, w, h) ){ return 0 }
+	return 1
+#deffunc WebView2_Navigate int pView, str sUrl
+	sdim bufTmp, (strlen(sUrl) + 1) * 2
+	cnvstow bufTmp, sUrl
+	if ( CCall2(pView, 5, 1, varptr(bufTmp)) ){ return 0 }
+	return 1
+#defcfunc WebView2_CnvpWtoS int pWStr, var vBuf
+	if ( pWStr == 0 ){ return 0 }
+	sdim bufTmp, (lstrlenW(pWStr) + 1) * 2
+	lstrcpyW varptr(bufTmp), pWStr
+	vBuf = cnvwtos(bufTmp)
+	bufTmp = 0
+	return 1
+#defcfunc WebView2_CnvWinStr int pWinStr, var vBuf
+	if ( pWinStr == 0 ){ return 0 }
+	WindowsGetStringRawBuffer pWinStr, p1
+	p1 = stat
+	ret = 1
+	if ( WebView2_CnvpWtoS(p1, vBuf) == 0 ){ ret = 0 }
+	if ( p1 ){ WindowsDeleteString pWinStr }
+	return ret
+#defcfunc WebView2_GetMonitorRect int hWnd_, array aRect
+	dim pmi, 10 : pmi(0) = 40
+	MonitorFromWindow hWnd_, 1
+	if ( GetMonitorInfo(stat, varptr(pmi)) == 0 ){ return 0 }
+	pmi(3) -= pmi(1) : pmi(4) -= pmi(2)
+	dim aRect, 4
+	CopyRect varptr(aRect), varptr(pmi(1))
+	return 1
+#defcfunc WebView2_GetWndRect int hWnd_, array aRect
+	dim wndPl, 11 : wndPl(0) = 44
+	if ( GetWindowPlacement(hWnd_, varptr(wndPl)) == 0 ){ return 0 }
+	dim aRect, 4
+	wndPl(9) -= wndPl(7) : wndPl(10) -= wndPl(8)
+	CopyRect varptr(aRect), varptr(wndPl(7))
+	return 1
+#deffunc WebView2_InitWnd int wndID
+	mref bmscr, 96 + wndID
+	hWndTmp = bmscr(13)
+	if ( WebView2_GetMonitorRect(hWndTmp, rcMon) == 0 ){ return 0 }
+	if( WebView2_GetWndRect(hWndTmp, rcWnd) == 0 ){ return 0 }
+	screen wndID, rcMon(2), rcMon(3), 2, , , rcWnd(2), rcWnd(3)
+	GetWindowLong hwnd, -16
+	SetWindowLong hwnd, -16, stat | 0x50000
+	SetWindowPos hwnd, 0, 0, 0, 0, 0, 0x63
+	return 1
+#global
+WebView2_Init
+#endif
+//ここからWebView開始
+title ISNAME+ISVersion+" - WebView Setting"
+//既定のURLは↓
+#define global DEF_URL "https://ntp.msn.com/edge/ntp?locale=ja&title=新規タブ"
+#define global WV2Env_CreateWV2Ctrl           3
+#define global WV2Ctrl_put_IsVisible          4
+#define global WV2Ctrl_put_Bounds             6
+#define global WV2Ctrl_GetParent             21
+#define global WV2_PrintToPdf                80
+#define global WV2_IsDownloadDialogOpen      90
+#define global WV2_OpenDownloadDialog        91
+#define global WV2_CloseDownloadDialog       92
+#define global WV2NewWnd_get_Uri              3
+#define global WV2NewWnd_put_NewWindow        4
+#define global WV2NewWnd_put_Handled          6
+#define global WV2NewWnd_GetDeferral          9
+#define global WV2Deferral_Complete           3
+#define global WV2Ctrl_Close                 24
+#define global WV2Ctrl_get_CoreWebView2      25
+#define global WV2_get_Source                 4
+#define global WV2_Navigate                   5
+#define global WM_SETFONT  0x0030
+#define global TCM_GETITEMCOUNT  0x1304
+#define global TCM_GETITEMA      0x1305
+#define global TCM_INSERTITEMA   0x1307
+#define global WV2_ExecuteScript             29
+#define global WV2_CapturePreview            30
+#define global WV2_Reload                    31
+#define global WV2_get_CanGoBack             38
+#define global WV2_get_CanGoForward          39
+#define global WV2_get_GoBack                40
+#define global WV2_get_GoForward             41
+#define global WV2_add_NewWindowRequested    44
+#define global WV2_del_NewWindowRequested    45
+#define global WV2_add_DocumentTitleChanged  46
+#define global WV2_del_DocumentTitleChanged  47
+#define global WV2_get_DocumentTitle         48
+#define global WV2_add_FullScrChanged        52
+#define global TCM_DELETEITEM    0x1308
+#define global TCM_GETCURSEL     0x130b
+#define global TCM_SETCURSEL     0x130c
+#define global TCM_HITTEST       0x130d
+#define global TCM_SETITEMW      0x133d
+#define global TCM_INSERTITEMW   0x133e
+#define global WV2_add_NavigationCompleted   15
+#define global WV2_del_NavigationCompleted   16
+#define global WV2_del_FullScrChanged        53
+#define global WV2_GetFullScreen             54
+#define global WV2_OpenTaskManagerWindow     79
+
+//Win32APIでリボン作りましょ
+title ISNAME+ISVersion+" - CreateMenu"
+	WebView2_InitWnd 0
+	hWnd0 = hwnd
+	dim wndInfo, 7
+	hMenu = CreateMenu()
+//リボン文字列(menuBufは4の倍数ごとに改行せよ)
+	menuBuf(0) = "戻る", "進む", "読込直し", "URLへ移動"
+	menuBuf(4) = "タブ追加(+)", "タブ閉じる(-)", "画像キャプチャ", "無印IS互換モード"
+	menuBuf(8) = "Chromeへ", "Edgeへ", "Firefoxへ", "Floorpへ(β)"
+	menuBuf(12) = "About", "ダウンロード履歴"
+	repeat length(menuBuf)
+title ISNAME+ISVersion+" - WebView2Load"
+		InsertMenu hMenu, -1, 0x400, 0x8000 + cnt, menuBuf(cnt)
+	loop
+	dim mi, 12 : mi = 48, 1 : mi(3) = 3
+	SetMenu hWnd0, hMenu
+	ldim lbCmd, length(menuBuf)
+//リボンの効果、同じく4ずつ
+	lbCmd(0) = *CMD_BACK, *CMD_FORWARD, *CMD_RELOAD, *CMD_NAVIGATE
+	lbCmd(4) = *CMD_NEW_TAB, *CMD_DEL_TAB, *CMD_CAPTURE, *CMD_Compatible
+	lbCmd(8) = *Browser_Chrome, *Browser_Edge, *Browser_Firefox, *Browser_Floorp
+	lbCmd(12) = *CMD_ABOUT, *CMD_DOWNLOAD
+	CreateWindowExA 0, "edit", 0, 0x56000080, 0, 0, 0, 0, hWnd0, 0, hinstance, 0
+	hEditUrl = stat : sendmsg hEditUrl, WM_SETFONT, hFont, 1
+	bufTmp = DEF_URL : SetWindowTextA hEditUrl, varptr(bufTmp)
+	dim rc, 4 : dim tci, 7 : bAdd = 0 : bDel = 0
+	CreateWindowExA 0, "SysTabControl32", 0, 0x56008468, 0, 0, 0, 0, hWnd0, 0, hinstance, 0
+	hTab = stat : sendmsg hTab, WM_SETFONT, hFont, 1
+	p1 = 0 << 16 : p1 |= 160 : sendmsg hTab, 0x1329, 0, p1
+	pEnv = WebView2_CreateEnv()
+	if ( pEnv == 0 ){ gsel 0, 1 : dialog "Err WebView2_CreateEnv \n WebViewの展開に失敗しました \n 書き込み権限をご確認ください", 1, "FATAL" : end }
+	curCtrl = 0 : curView = 0
+	
+//パス通すやつ
+title ISNAME+ISVersion+" - PATH"
+	oncmd gosub *EVENT_TITLE,    0x9000
+	oncmd gosub *EVENT_COMPLETE, 0x9001
+	oncmd gosub *EVENT_FULLSCR,  0x9002
+	oncmd gosub *EVENT_NEWWND,   0x9003
+	oncmd gosub *EVENT_NEWWND2,  0x9004
+	oncmd gosub *WM_SIZE,        0x0005
+	oncmd gosub *WM_CLOSE,       0x0010
+	oncmd gosub *WM_NOTIFY,      0x004E
+	oncmd gosub *WM_COMMAND,     0x0111
+	title ISNAME+ISVersion+" - TAB-Service"
+//最初のタブを生成
+	gosub *TAB_ADD
+	onexit *ISWindowExit
+	title ISNAME+ISVersion+" - Sucsess"
+//起動完了
+    title ""
+    gsel 0, 1
+    dialog "InternetStroller Memoria Release Candidate.1 Version0.0.1.5\n\nこれはRC版です"
+	stop
+
+//以降 "*" 処理
+*MENU_UPDATE
+	mi(1) = 1
+	if ( CCall2(dpCtrl(1), WV2_get_CanGoBack, 1, varptr(p1)) == 0 ){
+		if ( p1 ){ mi(3) = 0 }
+		else { mi(3) = 3 }
+	}
+	else { mi(3) = 3 }
+	SetMenuItemInfo hMenu, 0, 1, varptr(mi)
+	if ( CCall2(dpCtrl(1), WV2_get_CanGoForward, 1, varptr(p1)) == 0 ){
+		if ( p1 ){ mi(3) = 0 }
+		else { mi(3) = 3 }
+	}
+	else { mi(3) = 3 }
+	SetMenuItemInfo hMenu, 1, 1, varptr(mi)
+	DrawMenuBar hWnd0
+	return
+
+*TAB_GETINFO
+	sendmsg hTab, TCM_GETCURSEL, 0, 0 : iTab = stat
+	gosub *TAB_GETINFO2
+	return
+
+*TAB_GETINFO2
+	pTabInfo = 0
+	if ( iTab == -1 ){ return }
+	tci(0) = 8 : sendmsg hTab, TCM_GETITEMA, iTab, varptr(tci)
+	if ( stat == 0 ){ return }
+	pTabInfo = tci(6)
+	dupptr dpCtrl, WV2_DATA_SIZE * 28 + pTabInfo, 8, 4
+	return
+
+*TAB_SELECT
+	gosub *TAB_GETINFO
+	if ( pTabInfo == 0 ){ return }
+	pView = -1 : gosub *TAB_UPDATE
+	gosub *WM_SIZE
+	ret = CCall2(dpCtrl, WV2Ctrl_put_IsVisible, 1, 1)
+	return
+
+*TAB_UPDATE
+	gosub *TAB_GETINFO
+	if ( pTabInfo == 0 ){ return }
+	gosub *MENU_UPDATE
+	if ( CCall2(dpCtrl(1), WV2_get_DocumentTitle, 1, varptr(p1)) == 0 ){
+		if ( pView == -1 || pView == dpCtrl(1) ){ SetWindowTextW hWnd0, p1 }
+		tci(0) = 1 : tci(3) = p1
+		sendmsg hTab, TCM_SETITEMW, iTab, varptr(tci)
+		CoTaskMemFree p1
+	}
+	if ( pView == -1 || pView == dpCtrl(1) ){
+		if ( CCall2(dpCtrl(1), WV2_get_Source, 1, varptr(p1)) == 0 ){
+			SetWindowTextW hEditUrl, p1
+			CoTaskMemFree p1
+		}
+	}
+	return
+
+*TAB_ADD
+	if ( bAdd ){ return }
+	bAdd = 1
+	gosub *TAB_ADD2
+	gosub *EVENT_SET
+	gosub *TAB_SELECT
+	bufTmp = DEF_URL
+	SetWindowTextA hEditUrl, varptr(bufTmp)
+	gosub *CMD_NAVIGATE
+	bAdd = 0
+	return
+
+*TAB_ADD2
+	gosub *TAB_GETINFO
+	if ( pTabInfo ){
+		ret = CCall2(dpCtrl, WV2Ctrl_put_IsVisible, 1, 0)
+	}
+	sendmsg hTab, TCM_GETITEMCOUNT, 0, 0 : iTab = stat
+	tci(0) = 9 : tci(6) = 0
+	bufTmp = "" : tci(3) = varptr(bufTmp)
+	sendmsg hTab, TCM_INSERTITEMA, iTab, varptr(tci)
+	sendmsg hTab, TCM_SETCURSEL, iTab, 0
+	curCtrl = WebView2_CreateCtrl(pEnv, hWnd0)
+	curView = WebView2_GetView(curCtrl)
+	if ( curCtrl == 0 || curView == 0 ){
+		gosub *TAB_DEL
+		return
+	}
+	return
+
+*TAB_DEL
+	sendmsg hTab, TCM_GETITEMCOUNT, 0, 0
+	if ( stat <= 1 ){ return }
+	if ( bDel ){ return }
+	bDel = 1
+	gosub *TAB_GETINFO2
+	if ( pTabInfo == 0 ){ return }
+	ret = CCall2(dpCtrl(0), WV2Ctrl_Close, 0)
+	WebView2_Release dpCtrl(1)
+	WebView2_Release dpCtrl(0)
+	HeapFree GetProcessHeap(), 0, pTabInfo
+	sendmsg hTab, TCM_DELETEITEM, iTab, 0
+	if ( iTab ){ iTab-- }
+	sendmsg hTab, TCM_SETCURSEL, iTab, 0
+	gosub *TAB_SELECT
+	bDel = 0
+	return
+
+*EVENT_TITLE
+	pView = wparam : gosub *TAB_UPDATE
+	return
+
+*EVENT_COMPLETE
+	pView = wparam : gosub *TAB_UPDATE
+	return
+
+*EVENT_FULLSCR
+	gosub *TAB_GETINFO
+	if ( pTabInfo == 0 ){ return }
+	if ( dpCtrl(1) != wparam ){ return }
+	if ( CCall2(dpCtrl(1), WV2_GetFullScreen, 1, varptr(p1)) ){ return }
+	if ( p1 ){
+		ShowWindow hEditUrl, 0
+		ShowWindow hTab, 0
+		wndInfo(0) = GetWindowLong(hWnd0, -20)
+		wndInfo(1) = GetWindowLong(hWnd0, -16)
+		wndInfo(2) = GetMenu(hWnd0)
+		SetMenu hWnd0, 0
+		if ( WebView2_GetWndRect(hWnd0, rc) == 0 ){ return }
+		wndInfo(3) = rc(0), rc(1), rc(2), rc(3)
+		SetWindowLong hWnd0, -20, 0
+		SetWindowLong hWnd0, -16, wndInfo(1) & 0xff000000
+		if ( WebView2_GetMonitorRect(hWnd0, rc) == 0 ){ return }
+		SetWindowPos hWnd0, -1, rc(0), rc(1), rc(2), rc(3), 0x220
+	}
+	else {
+		ShowWindow hEditUrl, 5
+		ShowWindow hTab, 5
+		SetWindowLong hWnd0, -20, wndInfo(0)
+		SetWindowLong hWnd0, -16, wndInfo(1)
+		if ( wndInfo(2) ){ SetMenu hWnd0, wndInfo(2) }
+		if ( wndInfo(0) & 0x8 ){ p1 = -1 } else { p1 = -2 }
+		SetWindowPos hWnd0, p1, wndInfo(3), wndInfo(4), wndInfo(5), wndInfo(6), 0x220
+		ShowWindow hWnd0, 1
+	}
+	return
+
+*EVENT_NEWWND
+	if ( lparam == 0 || bAdd != 0 ){ return }
+	bAdd = 1
+	pNewWnd = lparam
+	if ( CCall2(pNewWnd, WV2NewWnd_GetDeferral, 1, varptr(pDef)) == 0 ){
+		PostMessage hWnd0, 0x9004, 0, 0
+		bAdd = 1
+	}
+	return
+
+*EVENT_NEWWND2
+	if ( CCall2(pNewWnd, WV2NewWnd_put_Handled, 1, 1) == 0 ){
+		if ( CCall2(pNewWnd, WV2NewWnd_get_Uri, 1, varptr(p1)) == 0 ){
+			gosub *TAB_ADD2
+			ret = CCall2(pNewWnd, WV2NewWnd_put_NewWindow, 1, curView)
+			gosub *EVENT_SET
+			gosub *TAB_SELECT
+		}
+	}
+	ret = CCall2(pDef, WV2Deferral_Complete, 0)
+	WebView2_Release pDef
+	bAdd = 0
+	return
+
+*EVENT_SET
+	pTabInfo = 0
+	pTabInfo = HeapAlloc(GetProcessHeap(), 8, WV2_DATA_SIZE * 28 + 8)
+	if ( pTabInfo == 0 ){ return }
+	dupptr dp, pTabInfo, WV2_DATA_SIZE * 4, 4
+	WebView2_EventInit WV2_EVENT_TITLECHANGED, hWnd0, 0x9000, dp
+	ret = CCall2(curView, WV2_add_DocumentTitleChanged, 2, dp, varptr(dp(6)))
+
+	dupptr dp, WV2_DATA_SIZE * 4 + pTabInfo, WV2_DATA_SIZE * 4, 4
+	WebView2_EventInit WV2_EVENT_NAVIGATIONCOMPLETED, hWnd0, 0x9001, dp
+	ret = CCall2(curView, WV2_add_NavigationCompleted, 2, dp, varptr(dp(6)))
+
+	dupptr dp, WV2_DATA_SIZE * 8 + pTabInfo, WV2_DATA_SIZE * 4, 4
+	WebView2_EventInit WV2_EVENT_FULLSCREEN, hWnd0, 0x9002, dp
+	ret = CCall2(curView, WV2_add_FullScrChanged, 2, dp, varptr(dp(6)))
+
+	dupptr dp, WV2_DATA_SIZE * 12 + pTabInfo, WV2_DATA_SIZE * 4, 4
+	WebView2_EventInit WV2_EVENT_NEWWINDOW, hWnd0, 0x9003, dp
+	ret = CCall2(curView, WV2_add_NewWindowRequested, 2, dp, varptr(dp(6)))
+
+	dupptr dpCtrl, WV2_DATA_SIZE * 28 + pTabInfo, 8, 4
+	dpCtrl(0) = curCtrl, curView
+
+	tci(0) = 8 : tci(6) = pTabInfo
+	sendmsg hTab, TCM_SETITEMW, iTab, varptr(tci)
+	return
+
+*CMD_BACK
+	gosub *TAB_GETINFO
+	if ( pTabInfo ){ ret = CCall2(dpCtrl(1), WV2_get_GoBack, 0) }
+	return
+
+*CMD_FORWARD
+	gosub *TAB_GETINFO
+	if ( pTabInfo ){ ret = CCall2(dpCtrl(1), WV2_get_GoForward, 0) }
+	return
+
+*CMD_RELOAD
+	gosub *TAB_GETINFO
+	if ( pTabInfo ){ ret = CCall2(dpCtrl(1), WV2_Reload, 0) }
+	return
+
+*CMD_NAVIGATE
+	gosub *TAB_GETINFO
+	if ( pTabInfo == 0 ){ return }
+	p1 = (GetWindowTextLengthW(hEditUrl) + 1) * 2
+	sdim bufTmp, p1
+	GetWindowTextW hEditUrl, varptr(bufTmp), p1
+	ret = CCall2(dpCtrl(1), WV2_Navigate, 1, varptr(bufTmp))
+	return
+
+*CMD_NEW_TAB
+	gosub *TAB_ADD
+	return
+
+*CMD_DEL_TAB
+	gosub *TAB_DEL
+	return
+
+*CMD_ABOUT
+    dialog ISNAME + ISVersion + " \n制作 : ABATBeliever \nビルド番号 : " + ISBuildNumber + "\nビルド日時 :" + ISBuildDay + "\nビルドHSPバージョン :" + hspver, 1, "About"
+	return
+
+*CMD_CAPTURE
+	dialog "png", 17
+	if ( stat == 0 ){ return }
+	if ( SHCreateStreamOnFileEx(refstr, 0x1002, 0x80, 1, 0, p1) ){ return }
+	gosub *TAB_GETINFO
+	if ( pTabInfo == 0 ){ return }
+	dupptr dp, WV2_DATA_SIZE * 20 + pTabInfo, WV2_DATA_SIZE * 4, 4
+	WebView2_EventInit WV2_EVENT_CAPTURE, hWnd0, 0, dp
+	ret = CCall2(dpCtrl(1), WV2_CapturePreview, 3, 0, p1, dp)
+	WebView2_EventWait dp
+	WebView2_Release p1
+	dialog "Capture Sucsess", 1, "CMD_CAPTURE"
+	return
+
+*CMD_DOWNLOAD
+	gosub *TAB_GETINFO
+	if ( pTabInfo == 0 ){ return }
+	if ( CCall2(dpCtrl(1), WV2_IsDownloadDialogOpen, 1, varptr(p1)) ){ return }
+	if ( p1 ){ p1 = WV2_CloseDownloadDialog } else { p1 = WV2_OpenDownloadDialog }
+	ret = CCall2(dpCtrl(1), p1, 0)
+	return
+
+*WM_SIZE
+	GetClientRect hWnd0, varptr(rc)
+	if ( IsWindowVisible(hEditUrl) ){
+		MoveWindow hEditUrl, 8, 0, rc(2) - 16, 20, 0
+		MoveWindow hTab, 0, 20, rc(2), 24, 0
+		p1 = 44
+	}
+	else { p1 = 0 }
+	gosub *TAB_GETINFO
+	if ( pTabInfo ){
+		WebView2_Size dpCtrl(0), 0, p1, rc(2), rc(3)
+	}
+	return
+
+*WM_CLOSE
+	sendmsg hTab, TCM_GETITEMCOUNT, 0, 0
+	repeat stat
+		iTab = cnt : gosub *TAB_DEL
+	loop
+	WebView2_Release pEnv
+	if ( hMenu ){ DestroyMenu hMenu }
+	return
+
+*WM_NOTIFY
+	if ( lparam == 0 ){ return }
+	dupptr dpHdr, lparam, 12, 4
+	if ( dpHdr(0) == hTab ){
+		if ( dpHdr(2) == -552 ){
+			sendmsg hTab, TCM_GETCURSEL, 0, 0
+			if ( stat == -1 ){ return }
+			iTab = stat : gosub *TAB_GETINFO2
+			if ( pTabInfo == 0 ){ return }
+			ret = CCall2(dpCtrl(0), WV2Ctrl_put_IsVisible, 1, 0)
+		}
+		if ( dpHdr(2) == -551 ){
+			gosub *TAB_SELECT
+			return
+		}
+		if ( dpHdr(2) == -5 ){
+			dim tchi, 3
+			GetCursorPos varptr(tchi)
+			ScreenToClient hTab, varptr(tchi)
+			sendmsg hTab, TCM_HITTEST, 0, varptr(tchi)
+			if ( stat == -1 ){ return }
+			iTab = stat : gosub *TAB_DEL
+			return
+		}
+	}
+	return
+
+*WM_COMMAND
+	if ( lparam == 0 && (wparam >> 16) == 0 ){
+		id = wparam & 0xffff
+		if ( id < 0x8000 || id >= (0x8000 + length(lbCmd)) ){ return }
+		gosub lbCmd(id - 0x8000)
+	}
+	return
+
+*Browser_Chrome
+if ( pTabInfo == 0 ){ return }
+p1 = (GetWindowTextLengthW(hEditUrl) + 1) * 2
+sdim bufTmp, p1
+GetWindowText hEditUrl, varptr(bufTmp), p1
+urltmp = bufTmp
+exec "cmd.exe /c start chrome " +  urlTmp
+return
+
+*Browser_Edge
+if ( pTabInfo == 0 ){ return }
+p1 = (GetWindowTextLengthW(hEditUrl) + 1) * 2
+sdim bufTmp, p1
+GetWindowText hEditUrl, varptr(bufTmp), p1
+urltmp = bufTmp
+exec "cmd.exe /c start msedge " +  urlTmp
+return
+
+*Browser_Firefox
+if ( pTabInfo == 0 ){ return }
+p1 = (GetWindowTextLengthW(hEditUrl) + 1) * 2
+sdim bufTmp, p1
+GetWindowText hEditUrl, varptr(bufTmp), p1
+urltmp = bufTmp
+exec "cmd.exe /c start firefox " +  urlTmp
+return
+
+*Browser_Floorp
+if ( pTabInfo == 0 ){ return }
+p1 = (GetWindowTextLengthW(hEditUrl) + 1) * 2
+sdim bufTmp, p1
+GetWindowText hEditUrl, varptr(bufTmp), p1
+urltmp = bufTmp
+exec "cmd.exe /c start floorp " +  urlTmp
+return
+
+//ここから互換性モード
+*CMD_Compatible
+exist dirinfo(1) + "\\Compatible.exe"
+if strsize = -1 {
+	dialog "Compatible.exe Not found"
+	stop
+}
+exec dirinfo(1) + "\\Compatible.exe"
+return
+
+//閉じるときの処理
+*ISWindowExit
+title "Please exit from TaskManager"
+end
