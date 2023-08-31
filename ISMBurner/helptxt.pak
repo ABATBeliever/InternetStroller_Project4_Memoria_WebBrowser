@@ -1,0 +1,32 @@
+□---------------------------□
+ | Internet Stroller Memoria |
+□---------------------------□
+
+【特殊URL】
+is://about      : Windowsとブラウザのバージョンを表示します(Winver)
+is://capture    : 画面をキャプチャします
+is://compatible : 互換ダイアログを表示中のURLで起動
+is://version    : ブラウザのバージョンのみを表示
+is://webview    : WebView2Loader.dllの絶対パスを表示
+is://local      : ローカルファイルを開くウィンドウを表示
+is://update     : 最新版のダウンロードページへリダイレクト
+is://home       : InternetStrollerのページに移動
+is://credit     : 製作者名表示
+※一部は互換モードでも使えます	
+
+【引数】
+URL        :URLを開く
+bypass     :BypassChecksumモードを強制起動(β)
+compatible :互換性モードを強制起動(β)
+
+【URLプッシュ機能・互換性モードにおける注意点】
+・URLプッシュの対象ブラウザがない場合エラーが出ます。
+・URLプッシュにはコマンドプロンプトが使用されます。
+・Ablaze Floorpに対してURLプッシュを行う場合、タブは前回のセッションが必ず復元されますが、これはFloorpの仕様です。
+・互換性モードでは最新のIE(10以降の場合IE11)のコンポーネントが使われます。ほとんどのページでエラーが出ますが仕様です。
+※Wine,ReactOS環境で互換モードを開いた場合はOSの設定によりGeckoエンジンなどが使用されるか、エラーが出ます。
+
+【注意】
+このブラウザは個人が趣味で制作しています。すべて自己責任で。
+
+2021 - 2023 InternetStroller                                                       Made by ABATBeliever
