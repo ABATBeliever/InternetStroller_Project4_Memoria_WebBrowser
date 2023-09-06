@@ -1,0 +1,53 @@
+conf.ini of InternetStrollerMemoria
+2
+
+///////>About<///////
+ABATBeliever
+JAPANESE-日本語[pack]
+2023/09/06
+
+
+///////>Like URL<///////
+TYPEYourFavoriteSite1
+TYPEYourFavoriteSite2
+TYPEYourFavoriteSite3
+
+///////>WindowSetting<///////
+1200
+600
+notyet
+notyet
+
+
+///////>Text<///////
+戻る
+進む
+読込直し
+URLへ移動
+タブ追加(+)
+タブ複製
+タブ閉じる(-)
+画像キャプチャ
+無印IS互換モード
+URLプッシュ
+About
+ローカル
+まなPAD
+ダウンロード履歴
+Err WebView2_CreateEnv \nWebViewの展開に失敗しました 書き込み権限をご確認ください 互換性モードを起動しますか?
+バージョンは
+です。
+WebViewイメージは
+に展開されています。
+ ビルド番号 : 
+URL送信ウィザード
+閉じる
+互換性モードを起動しますか?
+URLへ移動
+読み込み直し(Reload)
+進む(Go)
+戻る(Back)
+互換モード終了
+言語/Language(ini)
+URLへ移動
+文字列を検索
