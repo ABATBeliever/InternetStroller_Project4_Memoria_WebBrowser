@@ -1,0 +1,12 @@
+・UI変更
+・タイトルの右クリック時の動作
+・引数追加
+ delconf
+ delhtm
+・履歴機能追加
+・オンライン/伊那の表示
+・Advancedオプション追加
+・confやhtmlの削除機能
+・taskmgr,pdfプリント,executescript
+・WebViewへのアクセス
+・gooコードへのURL
