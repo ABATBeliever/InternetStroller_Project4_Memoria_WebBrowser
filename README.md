@@ -44,7 +44,7 @@ https://abatbeliever.github.io/InternetStroller/index.html
 * Windows10 21H2 or Later<br>
 * WebView2Runtime Evergreen
 
-  [https://developer.microsoft.com/en-us/microsoft-edge/webview2/?form=MA13LH#download](https://go.microsoft.com/fwlink/p/?LinkId=2124703)
+  https://go.microsoft.com/fwlink/p/?LinkId=2124703
 
   (Standard on the OS, no download required in most cases)
  
