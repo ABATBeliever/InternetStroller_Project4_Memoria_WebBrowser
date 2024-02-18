@@ -1,0 +1,6 @@
+//FileAlca
+#module
+#defcfunc FileCheck str filename
+	exist filename
+	if strsize=-1{return 1}else{return 0}
+#global
