@@ -21,7 +21,7 @@ https://abatbeliever.github.io/InternetStroller/index.html
 ・History, sign-in data, etc. are stored in the same directory. Take a walk on the Internet.<br>
 ・Robust and comfortable browsing experience with OS standard WebView2.<br>
 ・Legacy, easy-to-use interface with Win32 API.<br>
-・Ultra-lightweight, 521KB in total. (Calculated on the initial case without user profile)<br>
+・Ultra-lightweight, 914KB in total. (Calculated on the initial case without user profile)<br>
 ・Easy to take screenshots .<br>
 ・Ability to send URLs to other browsers.<br>
 ・Also pdf generation, its own task manager and update checker.<br>
@@ -32,7 +32,7 @@ https://abatbeliever.github.io/InternetStroller/index.html
 ・履歴やサインインデータ等は同じディレクトリに保存。ネットを散歩しましょう。<br>
 ・OS標準のWebView2による、堅牢で快適なブラウジング体験。<br>
 ・Win32APIによる、レガシーで使いやすいインターフェース。<br>
-・合計521KBという超軽量。(ユーザープロファイルのない初期の場合で計算)<br>
+・合計914KBという超軽量。(ユーザープロファイルのない初期の場合で計算)<br>
 ・スクリーンショットやpdf出力も簡単に。<br>
 ・他のブラウザへのURL送信機能。<br>
 ・pdf生成や独自のタスクマネージャー、更新確認機能も。<br>
