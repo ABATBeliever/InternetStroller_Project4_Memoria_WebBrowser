@@ -1,0 +1,82 @@
+
+*WM_SIZE
+	if iswindow_exitcode = "true" {end}
+	gosub *WM_STBAR
+	stbar_resize
+	gosub *EVENT_URL
+	GetClientRect hWnd0, varptr(rc)
+	if ( IsWindowVisible(hEditUrl) ){
+		MoveWindow hEditUrl, 20+(DPISETPOS*4), 25+(DPISETPOS*4), rc(2) - 22 - (DPISETPOS*2), 20+(DPISETPOS*5), 0
+		MoveWindow hTab, 0, 0, rc(2), 24+(DPISETPOS*5), 0
+		p1 = 44
+	}
+	else { p1 = 0 }
+	gosub *TAB_GETINFO
+	if ( pTabInfo ){
+		WebView2_Size dpCtrl(0), 0, p1+(DPISETPOS*10), rc(2), rc(3)-25-(DPISETPOS*2)
+	}
+
+	return
+
+*WM_STBAR
+	gsel 0
+	clrobj
+    objsize 20+(DPISETPOS*5),20+(DPISETPOS*5):pos 0,25+(DPISETPOS*5):button gosub "",*POP_URL
+    hButton1 = objinfo(stat, 2)
+	stbar_ini
+	gosub *EVENT_URL
+	if ( pTabInfo == 0 ){ return }
+	p1 = (GetWindowTextLengthW(hEditUrl) + 1) * 2
+	sdim bufTmp, p1
+	GetWindowText hEditUrl, varptr(bufTmp), p1
+	STBarURL = bufTmp
+	stbar_resize
+	stbar_text ISVersion+" / Tab: "+(iTab+1)+" / URL : "+STBarURL
+	return
+
+*WM_CLOSE
+	sendmsg hTab, TCM_GETITEMCOUNT, 0, 0
+	repeat stat
+		iTab = cnt : gosub *TAB_DEL
+	loop
+	WebView2_Release pEnv
+	if ( hMenu ){ DestroyMenu hMenu }
+	return
+
+*WM_NOTIFY
+	if ( lparam == 0 ){ return }
+	dupptr dpHdr, lparam, 12, 4
+	if ( dpHdr(0) == hTab ){
+		if ( dpHdr(2) == -552 ){
+			sendmsg hTab, TCM_GETCURSEL, 0, 0
+			if ( stat == -1 ){ return }
+			iTab = stat : gosub *TAB_GETINFO2
+			if ( pTabInfo == 0 ){ return }
+			ret = CCall2(dpCtrl(0), WV2Ctrl_put_IsVisible, 1, 0)
+		}
+		if ( dpHdr(2) == -551 ){
+			gosub *TAB_SELECT
+			return
+		}
+		if ( dpHdr(2) == -5 ){
+			dim tchi, 3
+			GetCursorPos varptr(tchi)
+			ScreenToClient hTab, varptr(tchi)
+			sendmsg hTab, TCM_HITTEST, 0, varptr(tchi)
+			if ( stat == -1 ){ return }
+			iTab = stat : gosub *TAB_DEL
+			return
+		}
+	}
+	return
+
+*WM_COMMAND
+	if ( lparam == 0 && (wparam >> 16) == 0 ){
+		id = wparam & 0xffff
+		if ( id < 0x8000 || id >= (0x8000 + length(lbCmd)) ){ return }
+		gosub lbCmd(id - 0x8000)
+	}
+	return
+
+*WM_SideBar_JUDGE
+	return
