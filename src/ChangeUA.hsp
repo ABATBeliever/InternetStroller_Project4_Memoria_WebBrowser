@@ -1,0 +1,38 @@
+*CMD_CHANGEUA
+IShwndOpen(7)=1
+screen 7,400,200
+if VARIABLE_CONF_MDI=0{GetWindowLong hWnd,-16:SetWindowLong hWnd,-16,stat|$00CF0000:SetParent hWnd,hClient:gsel 7:width ,,0,0}
+width ,,(ginfo(0)-30),(ginfo(1)-50)
+title "Change User Agent - ユーザエージェント文字列の変更"
+	GetWindowLong hwnd, -16
+	SetWindowLong hwnd, -16, stat - $20000
+	SetWindowLong hwnd, -16, stat - $40000
+	SetWindowLong hwnd, -16, stat - $80000
+gsel 7,2
+
+sdim ua,10240
+pos 30,10:input ua,340,100
+objsize 70,30
+pos 300,115:button gosub "Change",*CMD_CHANGEUA_RUN
+objsize 120,30:pos 140,150:button gosub "Close",*CMD_CHANGEUA_CLOSE
+DwmSetWindowAttribute hwnd,DWMWA_USE_IMMERSIVE_DARK_MODE,VARIABLE_CONF_WINDOW_COLOR,4
+return
+
+*CMD_CHANGEUA_RUN
+if ua=""{return}
+sdim ua1,10240
+cnvstow ua1, ua
+dialog "UserAgent will:\n\n"+ua+"\n\nUA can be changed for each tab.\nUA changes can affect processes and behavior.\nUAはタブごとに制御されます。\nUA変更は動作に悪影響を及ぼすかもしれない。",3,"UA Change"
+if stat=7{return}
+UADefault="no"
+ret = CCall2(pView, 3, 1, varptr(pSettings))
+ret = CCall2(pSettings, 22, 1, varptr(ua1))
+WebView2_Release pSettings
+gosub *CMD_Reload
+dialog "OK",0,"UA Change"
+return
+
+*CMD_CHANGEUA_CLOSE
+IShwndOpen(7)=0
+gsel 7,-1
+return

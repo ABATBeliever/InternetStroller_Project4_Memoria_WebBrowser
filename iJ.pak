@@ -1,0 +1,62 @@
+;InternetStroller Memoria ISConfig.ini
+[HEAD]
+HEAD_VERSION=2
+HEAD_WRITER=ABATBeliever
+HEAD_LANGUAGE=JAPANESE-日本語
+HEAD_BUILD=2024/08/06
+
+[REG]
+;Weft Size (Default=>1200)
+REG_WINDOW1=1200
+;Warp Size (Default=>600)
+REG_WINDOW2=600
+;Weft Position (Reset=>'')
+REG_WINDOWPOS1=
+;Warp Position (Reset=>'')
+REG_WINDOWPOS2=
+REG_DarkMode=0
+REG_CLOSEANIMATION=1
+REG_ISCRIPTENABLE=0
+;MDI
+REG_MDI=1
+REG_DPI=0
+;UserAgent (Default=>'')
+REG_DEFUA=
+REG_STBAR=0
+;DefalutPageColor (Default=>'' #<BackGround>,<Text>,<Section BackGround> RGB)
+REG_DEFPAGECOLOR=
+REG_AUTOSEARCH=0
+
+[URLs]
+;Search URL(MANA PAD)
+;First URL(Original:"include")
+URL_FIRST=include
+URL_SEARCH=https://www.google.co.jp/search?q=
+URL_GETUPDATE=https://abatbeliever.net/InternetStroller/downloads.html#
+URL_TRANSLATE=https://translate.google.com/translate?sl=auto&tl=ja&hl=ja&u=
+URL_REPORT=https://abatbeliever.net/InternetStroller/report/memoria.html
+
+[Passage]
+PASSAGE_SENDBACK=戻る
+PASSAGE_SENDFORWARD=進む
+PASSAGE_SENDRELOAD=読込直し
+PASSAGE_NAVIGATE=URLへ移動
+PASSAGE_NEWTAB=タブ追加(+)
+PASSAGE_CLONETAB=タブ複製
+PASSAGE_DELETETAB=タブ閉じる(-)
+PASSAGE_CAPUTURE=画像キャプチャ
+PASSAGE_ISABOUT=About
+PASSAGE_LOCAL=ローカル
+PASSAGE_MANAPADNAME=まなPAD
+PASSAGE_DOWNLOADS=ダウンロード履歴
+PASSAGE_CLOSE=閉じる
+PASSAGE_INICONFIG=ISConfig.ini情報
+PASSAGE_MOVEURL=URLへ移動
+PASSAGE_SEARCHURL=文字を検索
+PASSAGE_MANACLOSE=閉じる
+PASSAGE_UPDATE=更新確認
+PASSAGE_TRACK=閲覧履歴
+PASSAGE_FUNCTION1=その他の機能
+PASSAGE_FUNCTIONTITLE=Conf
+PASSAGE_SEARCHTEXT=文字列を検索
+PASSAGE_TRANSLATE=ページを翻訳
