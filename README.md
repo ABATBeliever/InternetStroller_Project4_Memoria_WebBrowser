@@ -1,74 +1,63 @@
-# Internet Stroller Memoria WebBrowser
- 
-Welcome to InternetStroller Memoria
+# InternetStroller Memoria
 
-This browser is an ultra-lightweight browser that requires no installation and can be stored on a USB stick.
+![License](https://img.shields.io/badge/license-MIT-blue.svg)
+![Version](https://img.shields.io/badge/version-1.5.3.0-green.svg)
+![Version](https://img.shields.io/badge/Language-HSP3.6-yellow.svg)
 
-InternetStroller Memoriaへようこそ
+## 概要
+InternetStrollerMemoria(ISMemoria)はWebViewを利用したHSP製ブラウザです。
 
-このブラウザはインストール不要、USBにも納めることのできる超軽量ブラウザです。
+MicrosoftEdgeと比べてUIや、ブラウジング以外の機能が単純なため極めて軽量です。
 
-# Download - 入手
-https://github.com/ABATbeliever/InternetStroller_Project4_Memoria/tags
+USBメモリなどに入れて「インターネットを散歩」しましょう！
 
-# Official Website
- 
-https://abatbeliever.github.io/InternetStroller/index.html
- 
-# Features
- 
-・No installation required. You can carry it on a USB or other media without contaminating the environment.<br>
-・History, sign-in data, etc. are stored in the same directory. Take a walk on the Internet.<br>
-・Robust and comfortable browsing experience with OS standard WebView2.<br>
-・Legacy, easy-to-use interface with Win32 API.<br>
-・Ultra-lightweight, 914KB in total. (Calculated on the initial case without user profile)<br>
-・Easy to take screenshots .<br>
-・Ability to send URLs to other browsers.<br>
-・Also pdf generation, its own task manager and update checker.<br>
-・No annoying own-ads or "make it my default browser".<br>
-・Javascript arbitrary code execution, developer window, and UA-spoofing(Beta) are also available.
+(Strollerはベビーカーを指す名詞ですが、命名当時は中学生だったので知りませんでした。Stroll+er)
 
-・インストール不要。環境を汚さず、USBなどに入れて持ち運べます。<br>
-・履歴やサインインデータ等は同じディレクトリに保存。ネットを散歩しましょう。<br>
-・OS標準のWebView2による、堅牢で快適なブラウジング体験。<br>
-・Win32APIによる、レガシーで使いやすいインターフェース。<br>
-・合計914KBという超軽量。(ユーザープロファイルのない初期の場合で計算)<br>
-・スクリーンショットやpdf出力も簡単に。<br>
-・他のブラウザへのURL送信機能。<br>
-・pdf生成や独自のタスクマネージャー、更新確認機能も。<br>
-・広告や「既定のブラウザに」のウザさがありません。<br>
-・Javascript任意コード実行や開発者向けウィンドウ、UA偽装(β)もできます。
+ブラウジング性能はWebView2のためEdge水準で、RSSや自作スクリプト、PDF書き出しなどの機能があります。
 
-# Requirement
- 
-* Windows10 21H2 or Later<br>
-* WebView2Runtime Evergreen
+逆に、パスワードマネージャーやVPNなどはありません。
 
-  https://go.microsoft.com/fwlink/p/?LinkId=2124703
+全ての設定と履歴は同ディレクトリに生成されます。
 
-  (Standard on the OS, no download required in most cases)
- 
-# Installation
- 
-Just launch the exe file.<br>
-To uninstall, simply delete the file.<br>
-Only the directory where the exe file resides is used, no %Appdata% or registry is involved.
+高DPIやMDIなどいろいろサポートしているので、ゲーミングPCから小型タブレットまで。
 
-exeファイルを起動するだけ。<br>
-アンインストールも簡単。レジストリや%Appdata%は触らないよ
- 
-# Note
- 
-If the environment is not Japanese, Japanese characters will be garbled, but if English is selected, there is no problem at all.<br>
-英語環境で日本語を選択すると文字が化ける可能性があるが、システムに問題はない。
- 
-# Author
- 
-* ABATBeliever
-* atene0712@gmail.com
- 
-# License
+## 目次
+- [インストール](#インストール)
+- [使い方](#使い方)
+- [貢献](#貢献)
+- [依存関係](#依存関係)
+- [公式サイト](https://abatbeliever.net/InternetStroller/)
 
-"InternetStroller Memoria" is under [MIT license](https://en.wikipedia.org/wiki/MIT_License).
+## インストール
+インストールは不要です。すべての設定や履歴はexeと同じディレクトリに生成され、そのフォルダを削除するだけでアンインストール可能です。
 
-*Not intended for implementation in the EU and UK in the first place.
+## 使い方
+exeを起動します。
+
+## 貢献
+issue、HSPコンテスト2024、[Twitter](https://x.com/abatbeliever)へ。
+
+## 依存関係
+[HSP3でWebView](https://blog.goo.ne.jp/hiro239415/e/5041aec497e02427c2b123aef07977e3)
+
+[WebView2Loader.dll](https://www.nuget.org/packages/Microsoft.Web.WebView2)
+
+[hspinets.dll](https://hsp.moe/#hspinet)
+
+[文字列の置換コード](https://archive.kerupani129.net/blog/posts/hsp-%E6%96%87%E5%AD%97%E5%88%97%E7%BD%AE%E3%81%8D%E6%8F%9B%E3%81%88-%E3%81%A7%E3%81%8D%E3%82%8B%E4%BA%BA%E3%81%AF%E3%81%A7%E3%81%8D%E3%82%8B%E3%81%A8%E6%80%9D%E3%81%86%E3%81%91%E3%81%A9%E3%81%A7/)
+
+[バルーン通知](https://hsp.tv/play/pforum.php?mode=pastwch&num=47647)
+
+[UserAgent](https://hsp.tv/play/pforum.php?mode=all&num=100931)
+
+[iniモジュール,許諾の元改造](https://dev.onionsoft.net/seed/info.ax?id=2367)
+
+[マルチダイアログ](https://hsp.moe/#taskdialog)
+
+[複数ファイル対応型dialog](https://hsp.tv/play/pforum.php?mode=all&num=101616)
+
+[ダークモード対応](https://hsp.tv/play/pforum.php?mode=all&num=100064)
+
+[高DPI](https://learn.microsoft.com/ja-jp/windows/win32/api/winuser/nf-winuser-setprocessdpiaware?redirectedfrom=MSDN)
+
+[HotSoupProcessor3](https://hsp.tv/)
