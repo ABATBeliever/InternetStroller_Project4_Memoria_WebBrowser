@@ -1,0 +1,209 @@
+*CMD_RSS
+//0.1	hspinet
+//0.11	hspinets、文字コード
+//0.9	初の実装
+//0.91	RSS2.0の仕様へ対応、改行コード
+//0.92	一部URLの破損を修復(GIGAZINE,&#45;を-へ)
+//0.93	WD対策
+//0.94	グラフィック
+//0.95  Cdata問題
+//0.96	サイズ
+//1.00  正式版
+RSSAppName="RSSer"
+RSSAppVer="v1.00"
+RSSTextGet=0
+RSSResultURL(0)=""
+RSSResultURLSet=0
+GUIArticle=""
+GUIArticleLink=""
+RSSErrPopup="警告！タイトルとリンクの数が一致しません。\n・RSSが破損している\n・非サポート形式(RSS1.0/RSS2.0/RSS0.9以外)\nなどの可能性があります。\nrss.txtの、以下の行数目のURLを削除してリトライしてください。\n>>"
+screen 1,600,400
+gosub *SetColor
+title RSSAppName+" "+RSSAppVer
+IShwndOpen(1)=1
+if VARIABLE_CONF_MDI=0{GetWindowLong hWnd,-16:SetWindowLong hWnd,-16,stat|$00CF0000:SetParent hWnd,hClient:gsel 8:width ,,0,0}
+gsel 1
+GetWindowLong hwnd, -16
+SetWindowLong hwnd, -16, stat - $20000
+SetWindowLong hwnd, -16, stat - $80000
+cls 1
+gosub *RSS_START
+return
+
+*RSS_START
+gsel 1
+clrobj
+GUIList="RSSer v1.00\n\n"
+RSS_Control=0
+pos 0,0:objsize 600,365:listbox RSS_Control,0,GUIList
+hListbox = objinfo(stat, 2)//oncmd用
+mesboxtest=""
+pos 0,365:mesbox mesboxtest,400,34,0,0
+objsize 100,35
+pos 400,365:button gosub "Visit WebSite",*Open
+pos 500,365:button gosub "Close",*RSSerEND
+objenable 2,0
+GUIArticleLinkLast=0
+GUIArticleLinkVar=""
+if FileCheck(""+dir_exe+"\\rss.txt")=1{dialog "rss.txtの定義ファイルがないです。":goto *RSSerEND}
+netinit
+if stat : dialog "インターネットに接続できませんでした。\n\n・インターネットに接続されていない。\n・ファイアーウォールまたはグループポリシー\n・OSなどの仕様変更\n\n終了。" :goto *RSSerEND
+gosub *RSS_Gets
+return
+
+*RSS_Gets
+gsel 1
+title RSSAppName+" "+RSSAppVer+" - [Get]"
+objprm 0,GUIList
+Nbuf=""
+notesel Nbuf
+noteload ""+dir_exe+"\\rss.txt"
+if RSSTextGet>(notemax-1){goto *RSS_GUIS}
+noteget URL,RSSTextGet
+
+if URL="[EOF]":goto *RSS_GUIS
+RSSResultURL(RSSTextGet)=URL
+RSSTextGet=RSSTextGet+1//毎回増える
+neturl URL
+netrequest_get "";Blank
+ReturnCount=0;タイムアウト
+res=1
+gosub *RSS_Returncheck
+return
+
+*RSS_Returncheck
+ReturnCount=ReturnCount+1
+if ReturnCount=255{
+GUIList=GUIList+"FAIL ["+RSSTextGet+"] ERR(TimeOut255) URL:"+URL+"\n"
+netinit
+gosub *RSS_Gets
+return
+}
+netexec res
+if res > 0 : goto *RSS_OK
+if res < 0 : goto *RSS_Fail
+await 1
+gosub *RSS_Returncheck
+return
+
+*RSS_Fail
+neterror estr
+GUIList=GUIList+"FAIL ["+RSSTextGet+"] ERR("+estr+") URL:"+URL+"\n"
+netinit
+gosub *RSS_Gets
+return
+	
+*RSS_OK
+title RSSAppName+" "+RSSAppVer+" - [Read]"
+sdim buf, netgetv_size()
+netgetv_data buf
+NBuf=buf
+RSSResultData((RSSTextGet)-1)=buf
+GUIList=GUIList+"Get ["+RSSTextGet+"] URL:"+URL+"\n"
+RSSArticleNameFlag=0
+RSSArticleLinkFlag=0
+tmp=RSSResultData((RSSTextGet)-1)
+tmp = Nbuf
+tmp=strtrim(tmp, 3, '\t')//TABをなくす
+tmp=strtrim(tmp, 3)//空白をなくす
+//改行コードを消す
+tmp=strtrim(tmp, 3, 0x0A)	//LF
+tmp=strtrim(tmp, 3, 0x0D)	//CR
+//"<"と">"で囲まれた文字を小文字に変換
+flag=0
+repeat strlen(tmp)
+	x=peek(tmp,cnt)
+	if x='<' : flag=1 : continue
+	if x='>' : flag=0 : continue
+	if flag {
+		if x>='A' & x<='Z' : x+=0x20 : poke tmp,cnt,x	//大文字は0x20を足すと小文字になる
+	}
+loop
+//本編
+strrep tmp,"![cdata[",""
+strrep tmp,"<![cdata[",""
+strrep tmp,"]]>",""
+p=0 : flag=0 : gets=""
+repeat//タイトル
+	if flag {
+		res=instr(tmp,p,"</title>")
+		if res<0 : break
+		gets=""
+		gets=strmid(tmp,p,res)
+		strrep gets,"&#45;","-"
+		if RSSArticleNameFlag=0{
+			RSSArticleNameFlag=1
+			}else{
+			if GUIArticle!=""{GUIArticle=GUIArticle+"\n"+gets}else{GUIArticle=gets}
+			}
+		p+=res+8
+		flag=0
+	} else {
+		res=instr(tmp,p,"<title>")
+		if res<0 : break
+		p+=res+7
+		flag=1
+	}
+loop
+p=0 : flag=0 : gets=""
+repeat//リンク
+	if flag {
+		res=instr(tmp,p,"</link>")
+		if res<0 : break
+		gets=""
+		gets=strmid(tmp,p,res)
+		strrep gets,"&#45;","-"
+			if RSSArticleLinkFlag=0{
+			RSSArticleLinkFlag=1
+		}else{
+			if GUIArticleLink!=""{GUIArticleLink=GUIArticleLink+"\nh"+gets}else{GUIArticleLink="h"+gets}
+			RSSResultURLp(RSSResultURLSet)="h"+gets:RSSResultURLSet=RSSResultURLSet+1
+		}
+		p+=res+8
+		flag=0
+	} else {
+		res=instr(tmp,p,"<link>")
+		if res<0 : break
+		p+=res+7
+		flag=1
+	}
+loop
+split GUIArticle, "\n", tmp1
+split GUIArticleLink, "\n", tmp2
+if length(tmp1)!=length(tmp2){dialog RSSErrPopup+str(RSSTextGet):goto *RSSerEND}
+gosub *RSS_Gets
+return
+
+*RSS_GUIS
+title RSSAppName+" "+RSSAppVer+" - [List]"
+gsel 1
+objprm 0,GUIArticle
+title RSSAppName+" "+RSSAppVer+" - ArticleTotal:"+length(tmp1)
+objenable 2,1
+
+split GUIArticle, "\n", tmp1
+split GUIArticleLink, "\n", tmp2
+if length(tmp1)!=length(tmp2){dialog RSSErrPopup+str(RSSTextGet):goto *RSSerEND}else{tmp="Article: "+length(tmp1):objprm 1,tmp}
+
+oncmd gosub *oncmdcheck,$111
+Control=0
+return
+
+*oncmdcheck
+if lparam=hListbox{gosub *Analysis}
+return
+
+*Analysis
+if RSS_Control<0{return}
+gsel 1
+objprm 1,RSSResultURLp(RSS_Control)
+return
+
+*Open
+wvurl=RSSResultURLp(RSS_Control) : gosub *CMD_WV_RUN
+return
+
+*RSSerEND
+IShwndOpen(1)=0
+gsel 1,-1
+stop
