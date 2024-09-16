@@ -1,0 +1,13 @@
+https://www.nhk.or.jp/rss/news/cat0.xml
+http://feeds.cnn.co.jp/rss/cnn/cnn.rdf
+https://assets.wor.jp/rss/rdf/bloomberg/top.rdf
+https://assets.wor.jp/rss/rdf/sankei/flash.rdf
+https://news.yahoo.co.jp/rss/topics/top-picks.xml
+https://rss.itmedia.co.jp/rss/2.0/itmedia_all.xml
+https://gigazine.net/news/rss_2.0/
+http://www.asahi.com/rss/asahi/newsheadlines.rdf
+https://pc.watch.impress.co.jp/data/rss/1.0/pcw/feed.rdf
+https://lifehacking.jp/index.xml
+https://dailyportalz.jp/feed/headline
+https://rocketnews24.com/feed/
+[EOF]
