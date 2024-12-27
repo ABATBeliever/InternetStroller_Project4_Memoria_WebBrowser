@@ -1,7 +1,7 @@
 # InternetStroller Memoria
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Version](https://img.shields.io/badge/version-1.5.3.0-green.svg)
+![Version](https://img.shields.io/badge/version-1.6.0.0-green.svg)
 ![Version](https://img.shields.io/badge/Language-HSP3.6-yellow.svg)
 
 ## 概要
