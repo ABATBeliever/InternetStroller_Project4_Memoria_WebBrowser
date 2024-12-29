@@ -1,0 +1,1514 @@
+#packopt version "Build.ini"
+#packopt icon "image.ico"
+#pack "dll.pak"
+#pack "html.pak"
+#pack "iE.pak"
+#pack "iJ.pak"
+
+//====================================================================================
+//□---------------------------□
+// | Internet Stroller Memoria |
+//□---------------------------□
+//Copyright(C) ABATBeliever 2021-2024
+//Website:"https:/abatbeliever.github.io/InternetStroller/"
+//
+//MIT License
+//Copyright c 2021-2024 ABATBeliever
+//
+//Permission is hereby granted, free of charge, to any person obtaining a copy
+//of this software and associated documentation files (the "Software"), to deal
+//in the Software without restriction, including without limitation the rights
+//to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+//copies of the Software, and to permit persons to whom the Software is
+//furnished to do so, subject to the following conditions:
+//
+//The above copyright notice and this permission notice shall be included in all
+//copies or substantial portions of the Software.
+//
+//THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+//IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+//FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+//AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+//LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+//OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+//SOFTWARE.
+//====================================================================================
+
+//TEXTNAMESETTING
+ISProgress="12"
+title "[0/"+ISProgress+"] - init/Birthday"
+ISNAME="InternetStroller Memoria"
+ISDeepVersion="Alpha"
+ISVersion=ISDeepVersion+" Ver 1.5.2.0"
+ISCommonVer="3152"
+ISBuildNumber="3.152.741.0"///CommonVer.Ver.BuildID.SP
+ISBuildDay="2023/02/02"
+developer="ABATBeliever"
+mana="notyet"
+ver_about="no"
+funcmanager="no"
+iswindow_exitcode="false"
+darkmode_change="false"
+ChangeUAWindow="un"
+scr8="no"
+
+title ISNAME+ISVersion
+screen 0, 1200,600
+
+nowday=""+gettime(1)+"."+gettime(3)
+ISold=int("0")+gettime(0)-int("2021")
+if nowday="1.14" {dialog "Today is InternetStroller's "+ISOld+" years old birthday!\nThe first IS (Unlabeled 1.0.0) was launched on January 14, 2021!\n\n今日はInternetStrollerの "+ISOld+" 歳の誕生日！\n初代IS (無印1.0.0) は2021/1/14にリリースされました。",0,"Nofitication from ISMemoria - ISMemoriaからの重要なお知らせ"}
+if nowday="7.12" {dialog "Today is Atene's birthday!\n\n今日はアテネちゃんの誕生日！",0,"Nofitication from ISMemoria - ISMemoriaからの重要なお知らせ"}
+Mode="Normal"
+
+//http://hsp.tv/play/pforum.php?mode=pastwch&num=47647
+#module "trayicon"
+#define __TRAYICONSAMPLE__ 
+#define WM_TRAYEVENTSTART $900
+#define MAXICONS 16
+#uselib "Kernel32.dll"
+#func GetModuleFileName "GetModuleFileNameA" nullptr,prefstr,int
+#uselib "Shell32.dll"
+#func ExtractIconEx "ExtractIconExA" sptr,int,nullptr,var,int
+#func Shell_NotifyIcon "Shell_NotifyIconA" int,var
+#uselib "user32.dll"
+#func DestroyIcon "DestroyIcon" int
+#deffunc DestroyTrayIcon int iconid 
+dim NOTIFYICONDATA,88/4
+NOTIFYICONDATA = 88, hWnd, iconid
+Shell_NotifyIcon 2, NOTIFYICONDATA
+if hIcon.iconid { DestroyIcon hIcon.iconid : hIcon.iconid = 0 }
+return
+#deffunc CreateTrayIcon str tooltip, int nIconIndex, int iconid
+if hIcon.iconid { DestroyTrayIcon iconid }
+ExtractIconEx icofile, nIconIndex, hIcon.iconid, 1
+dim NOTIFYICONDATA,88/4
+NOTIFYICONDATA = 88, hWnd_, iconid, 7, WM_TRAYEVENTSTART, hIcon.iconid
+poke NOTIFYICONDATA, 4*6, tooltip
+Shell_NotifyIcon 0, NOTIFYICONDATA
+return
+#deffunc PopupBalloonTip str balloonInfoTitle, str balloonInfo, int balloonIcon,int iconid
+    dim NOTIFYICONDATA,488/4
+    NOTIFYICONDATA = 488, hWnd_, iconid, $10
+    poke NOTIFYICONDATA, 4*40, balloonInfo
+    NOTIFYICONDATA.104 = 1000*20
+    poke NOTIFYICONDATA, 4*105, balloonInfoTitle
+    NOTIFYICONDATA.121 = balloonIcon
+    Shell_NotifyIcon 1, NOTIFYICONDATA
+return
+#deffunc SetTrayIconFile str filename 
+sdim icofile,1024
+if filename = "" { GetModuleFileName 1024 : icofile = refstr } 
+else { icofile = filename }
+return 
+#deffunc _init_trayicon_
+mref bmscr,96: hWnd_ = bmscr.13
+dim hIcon,MAXICONS : SetTrayIconFile "" : return
+length
+#deffunc _deinit_trayicon_ onexit
+foreach hIcon : if hIcon.cnt { DestroyTrayIcon cnt } loop : return
+#global
+_init_trayicon_
+#ifdef __TRAYICONSAMPLE__@trayicon
+#include "hspext.as"
+
+title ISNAME+ISVersion+" - [1/"+ISProgress+"] - Including / Defcfunc
+
+#include "modTaskDialog.hsp"
+#include "ini_system.hsp"
+
+#include "hspinet.as"
+#include "mod_stbar.as"
+#include "shell32.as"
+
+#module
+	#defcfunc GetconfSTR str GetiniSection, str GetiniStr
+		ini_load "ISConfig.ini"
+		if GetiniSection=""{dialog "Program ERR\nGetiniSection invalid(i01)\n\nPlease Report to "+developer:return 1}
+		if GetiniStr=""{dialog "Program ERR\nGetiniSection invalid(i03)\n\nReport to "+developer:return 1}
+		sdim tmp , 1024
+		ini_section_sel GetiniSection
+		ini_get GetiniStr , tmp
+		if stat=1 {
+			dialog "Invalid value (does not exist or cannot be read)\nNew settings may have been added as a result of a browser update.\nMissing value '"+GetiniStr+"["+GetiniSection+"]'\nEdit(Y)/Ignore(N)\n\n値が無効です\nブラウザが更新された結果、新しい設定が追加された可能性があります\n存在しない値 '"+GetiniStr+"["+GetiniSection+"]'\n編集(Y)/無視(N)",3,"ISConfig Error"
+			if stat=6{ShellExecuteW 0, "open", "notepad", dirinfo(1)+"\\ISConfig.ini", 0, 10:end}
+		}
+	return tmp
+
+	#defcfunc GetconfINT str GetiniSection, str GetiniINT
+		ini_load "ISConfig.ini"
+		if GetiniSection=""{dialog "Program ERR\nGetiniSection invalid(i02)\n\nPlease Report to "+developer:return 1}
+		if GetiniINT=""{dialog "Program ERR\nGetiniINT invalid(i04)\n\nPkease Report to "+developer:return 1}
+		sdim tmp , 1024
+		ini_section_sel GetiniSection
+		ini_get GetiniINT , tmp
+		if stat=1 {
+			dialog "Invalid value (does not exist or cannot be read)\nNew settings may have been added as a result of a browser update.\nMissing value '"+GetiniINT+"["+GetiniSection+"]'\nEdit(Y)/Ignore(N)\n\n値が無効です\nブラウザが更新された結果、新しい設定が追加された可能性があります\n存在しない値 '"+GetiniINT+"["+GetiniSection+"]'\n編集(Y)/無視(N)",3,"ISConfig Error"
+			if stat=6{ShellExecuteW 0, "open", "notepad", dirinfo(1)+"\\ISConfig.ini", 0, 10:end}
+		}
+	return int(tmp)
+
+	#defcfunc modTasks str modTaskTitle, str modTaskName, str modTaskDismiss, str modTaskNames
+	dwFlags@mtd = 0
+	dwFlags@mtd = TDF_ALLOW_DIALOG_CANCELLATION
+	DialogVistaEx modTaskTitle,modTaskName,modTaskDismiss,"",modTaskNames, 3, 4
+	switch stat
+		case 101 : modTaskSelect="1" : swbreak
+		case 102 : modTaskSelect="2" : swbreak
+		case 103 : modTaskSelect="3" : swbreak
+		case 104 : modTaskSelect="4" : swbreak
+		case 105 : modTaskSelect="5" : swbreak
+		case 2 : modTaskSelect="0" : swbreak//Cancel
+		default : modTaskSelect="-1" : swbreak//Error
+	swend
+	return modTaskSelect
+#global
+#define ctype LOWORD(%1) (%1 & $FFFF)
+#define ctype HIWORD(%1) (%1 >> 16 & $FFFF)
+
+#uselib "dwmapi.dll"
+#func DwmSetWindowAttribute "DwmSetWindowAttribute" sptr,sptr,var,sptr
+#define DWMWA_USE_IMMERSIVE_DARK_MODE 20
+tmp=1
+DwmSetWindowAttribute hwnd,DWMWA_USE_IMMERSIVE_DARK_MODE,tmp,4
+
+*Continue00
+ini_set
+ini_load "ISConfig.ini"
+
+	if stat{
+		modTaskSelect=modTasks("Internet Stroller Memoria - No Config","There is no configuration file.\n有効な設定ファイルがありません","Please select the language for the ISConfig.ini.\nISConfig.iniを作るので言語を選択してください。","English\n日本語\nRetry\nExit")
+			if modTaskSelect="1" {bcopy "iE.pak",""+dir_cur+"\\ISConfig.ini":goto *Continue02}
+			if modTaskSelect="2" {bcopy "iJ.pak",""+dir_cur+"\\ISConfig.ini":goto *Continue02}
+			if modTaskSelect="3" {goto *Continue00}
+			if modTaskSelect="4" {end}
+			if modTaskSelect="0" {goto *Continue00}
+			if modTaskSelect="-1" {goto *Continue00}
+			ini_set
+			ini_load "ISConfig.ini"
+	}
+
+goto *Continue02
+
+*Continue02
+gosub *loadini
+width VARIABLE_CONF_WINDOW_POS_X, VARIABLE_CONF_WINDOW_POS_Y, VARIABLE_CONF_WINDOW_POS_3, VARIABLE_CONF_WINDOW_POS_4
+
+title ISNAME+ISVersion+" - [3/"+ISProgress+"]
+
+if dir_cmdline = "delconf" {gosub *CMD_FUNC_CONFDEL:end}
+if dir_cmdline = "delhtm" {gosub *CMD_FUNC_INDEXDEL:end}
+
+//OSVerUnderstanding
+ title ISNAME+ISVersion+" - [4/"+ISProgress+"] - Operating System Check
+ //Legacy
+ 	switch sysinfo(0)
+		case "WindowsNT ver5.0":OS="Windows 2000":goto *CompatibleCaution
+		case "WindowsNT ver5.1":OS="Windows XP":goto *CompatibleCaution
+		case "WindowsNT ver5.2":OS="Windows Server 2003 / ReactOS":goto *CompatibleCaution
+		case "WindowsNT ver6.0":OS="Windows Vista / Server 2008":goto *CompatibleCaution
+		case "WindowsNT ver6.1":OS="Windows 7 / Winlator Android":goto *CompatibleCaution
+		case "WindowsNT ver6.2":OS="Windows 8 / RT":goto *CompatibleCaution
+		case "WindowsNT ver6.3":OS="Windows 8.1 / RT":goto *CompatibleCaution
+
+		case "WindowsNT ver10.0":OS="Windows 10/11/more":goto *dllfile
+		default : OS="Unknown / Incompatible Windows":goto *CompatibleCaution//Error
+	swend
+
+//New
+*CompatibleCaution
+dialog "WebView doesn't support ["+OS+"]\nContinue(Y)/Close(N)",2
+if stat = "7" {end}
+goto *dllfile
+
+*dllfile
+//Dllfile found
+ title ISNAME+ISVersion+" - [5/"+ISProgress+"]
+ exist dirinfo(1) + "\\WebView2Loader.dll"
+ if strsize = -1 {bcopy "dll.pak",""+dir_cur+"\\WebView2Loader.dll"}
+
+ title ISNAME+ISVersion+" - [6/"+ISProgress+"] - mod_WebView2_10115038.hsp from Goo"
+  #include "mod_WebView2_10115038.hsp"
+
+title ISNAME+ISVersion+" - [7/"+ISProgress+"] -WebView"
+
+#include "hspinet.as"
+//WebViewSetting
+
+#define global WV2Env_CreateWV2Ctrl           3
+#define global WV2Ctrl_put_IsVisible          4
+#define global WV2Ctrl_put_Bounds             6
+#define global WV2Ctrl_GetParent             21
+#define global WV2_PrintToPdf                80
+#define global WV2_IsDownloadDialogOpen      90
+#define global WV2_OpenDownloadDialog        91
+#define global WV2_CloseDownloadDialog       92
+#define global WV2NewWnd_get_Uri              3
+#define global WV2NewWnd_put_NewWindow        4
+#define global WV2NewWnd_put_Handled          6
+#define global WV2NewWnd_GetDeferral          9
+#define global WV2Deferral_Complete           3
+#define global WV2Ctrl_Close                 24
+#define global WV2Ctrl_get_CoreWebView2      25
+#define global WV2_get_Source                 4
+#define global WV2_Navigate                   5
+#define global WM_SETFONT  0x0030
+#define global TCM_GETITEMCOUNT  0x1304
+#define global TCM_GETITEMA      0x1305
+#define global TCM_INSERTITEMA   0x1307
+#define global WV2_ExecuteScript             29
+#define global WV2_CapturePreview            30
+#define global WV2_Reload                    31
+#define global WV2_get_CanGoBack             38
+#define global WV2_get_CanGoForward          39
+#define global WV2_get_GoBack                40
+#define global WV2_get_GoForward             41
+#define global WV2_add_NewWindowRequested    44
+#define global WV2_del_NewWindowRequested    45
+#define global WV2_add_DocumentTitleChanged  46
+#define global WV2_del_DocumentTitleChanged  47
+#define global WV2_get_DocumentTitle         48
+#define global WV2_add_FullScrChanged        52
+#define global TCM_DELETEITEM    0x1308
+#define global TCM_GETCURSEL     0x130b
+#define global TCM_SETCURSEL     0x130c
+#define global TCM_HITTEST       0x130d
+#define global TCM_SETITEMW      0x133d
+#define global TCM_INSERTITEMW   0x133e
+#define global WV2_add_NavigationCompleted   15
+#define global WV2_del_NavigationCompleted   16
+#define global WV2_del_FullScrChanged        53
+#define global WV2_GetFullScreen             54
+#define global WV2_OpenTaskManagerWindow     79
+#define WS_EX_LAYERED $80000
+#define LWA_COLORKEY 1
+
+#enum IDM_ADD1 = 1
+
+DwmSetWindowAttribute hwnd,DWMWA_USE_IMMERSIVE_DARK_MODE,VARIABLE_CONF_WINDOW_COLOR,4
+
+//Win32API
+ title ISNAME+ISVersion+" - [8/"+ISProgress+"] - Win32API/WebViewInit"
+	font "Consolas", 10
+	WebView2_InitWnd 0
+	hWnd0 = hwnd
+	dim wndInfo, 7
+	hMenu = CreateMenu()
+//4n
+	menuBuf(0) = VARIABLE_CONF_TEXT_SENDBACK, VARIABLE_CONF_TEXT_SENDFORWARD, VARIABLE_CONF_TEXT_SENDRELOAD, VARIABLE_CONF_TEXT_NAVIGATE
+	menuBuf(4) = VARIABLE_CONF_TEXT_NEWTAB, VARIABLE_CONF_TEXT_DELETETAB, VARIABLE_CONF_TEXT_CAPUTURE, VARIABLE_CONF_TEXT_ATENE_NAME
+	menuBuf(8) = VARIABLE_CONF_TEXT_DOWNLOADS, VARIABLE_CONF_TEXT_FUNCTION+"(F)"
+	repeat length(menuBuf)
+
+		InsertMenu hMenu, -1, 0x400, 0x8000 + cnt, menuBuf(cnt)
+	loop
+	dim mi, 12 : mi = 48, 1 : mi(3) = 3
+	SetMenu hWnd0, hMenu
+	ldim lbCmd, length(menuBuf)
+	lbCmd(0) = *CMD_BACK, *CMD_FORWARD,*CMD_RELOAD, *CMD_NAVIGATE
+	lbCmd(4) = *CMD_NEW_TAB, *CMD_DEL_TAB, *CMD_CAPTURE, *CMD_MANAPAD
+	lbCmd(8) = *CMD_DOWNLOAD, *CMD_FUNC
+	CreateWindowExA 0, "edit", 0, 0x56000080, 0, 0, 0, 0, hWnd0, 0, hinstance, 0
+	hEditUrl = stat : sendmsg hEditUrl, WM_SETFONT, hFont, 1
+	bufTmp = DEF_URL : SetWindowTextA hEditUrl, varptr(bufTmp)
+	dim rc, 4 : dim tci, 7 : bAdd = 0 : bDel = 0
+	CreateWindowExA 0, "SysTabControl32", 0, 0x56008468, 0, 0, 0, 0, hWnd0, 0, hinstance, 0
+	hTab = stat : sendmsg hTab, WM_SETFONT, hFont, 1
+	p1 = 0 << 16 : p1 |= 160 : sendmsg hTab, 0x1329, 0, p1
+
+ title ISNAME+ISVersion+" - [9/"+ISProgress+"] - Creating WebView Profile"
+
+	pEnv = WebView2_CreateEnv()
+	if ( pEnv == 0 ){ gsel 0, 1 : dialog "WebView Can't Extract!\nLack of authorization or WebView2 runtime does not exist.",1, "FATAL":end}
+	curCtrl = 0 : curView = 0
+	
+//path
+ title ISNAME+ISVersion+" - [10/"+ISProgress+"]
+	oncmd gosub *EVENT_TITLE,    0x9000
+	oncmd gosub *EVENT_COMPLETE, 0x9001
+	oncmd gosub *EVENT_FULLSCR,  0x9002
+	oncmd gosub *EVENT_NEWWND,   0x9003
+	oncmd gosub *EVENT_NEWWND2,  0x9004
+	oncmd gosub *WM_SIZE,        0x0005
+	oncmd gosub *WM_CLOSE,       0x0010
+	oncmd gosub *WM_NOTIFY,      0x004E
+	oncmd gosub *WM_COMMAND,     0x0111
+ title ISNAME+ISVersion+" - [11/"+ISProgress+"] - CreatePopup"
+//FirstTab&WebView
+	onexit *ISWindowExit
+    dim RECT, 4
+    dim RECT1, 4
+	CreatePopupMenu
+	hMenu.1 = stat
+		AppendMenu hMenu.1, 0, $10, "Edit ISConfig"
+		AppendMenu hMenu.1, $800, 0, ""
+		AppendMenu hMenu.1, 0, $20, "Reset ISConfig"
+		AppendMenu hMenu.1, 0, $30, "Reset index.htm"
+		AppendMenu hMenu.1, $800, 0, ""
+		AppendMenu hMenu.1, 0, $40, "WebView Taskmgr..."
+		AppendMenu hMenu.1, 0, $50, "JavaScript Execute..."
+		AppendMenu hMenu.1, $800, 0, ""
+		AppendMenu hMenu.1, 0, $70, "Open WebView2 URLs"
+		AppendMenu hMenu.1, $800, 0, ""
+		AppendMenu hMenu.1, 0, $80, "Sourse of Notification (from HSP.tv)"
+		AppendMenu hMenu.1, 0, $90, "Sourse of WebView Control (from goo)"
+		AppendMenu hMenu.1, 0, $100, "Sourse of WebView2Loader (from Nuget)"
+		AppendMenu hMenu.1, $800, 0, ""
+		AppendMenu hMenu.1, 0, $110, "Open Youtube of 'Abell&Atene'"
+		AppendMenu hMenu.1, $800, 0, ""
+		AppendMenu hMenu.1, 0, $120, "Report Issue..."
+		AppendMenu hMenu.1, $800, 0, ""
+		AppendMenu hMenu.1, 0, $130, "Change User Agent(β)"
+		AppendMenu hMenu.1, $800, 0, ""
+		AppendMenu hMenu.1, 0, $140, "DarkMode"
+		AppendMenu hMenu.1, $800, 0, ""
+		AppendMenu hMenu.1, 0, $150, "IScript GUI for Memoria"
+		AppendMenu hMenu.1, $800, 0, ""
+		AppendMenu hMenu.1, 0, $990, "Close Browser"
+	CreatePopupMenu
+	hMenu.2 = stat
+		AppendMenu hMenu.2, 0, $2010, VARIABLE_CONF_TEXT_TRANSLATE+"..."
+		AppendMenu hMenu.2, 0, $2020, VARIABLE_CONF_TEXT_HISTORY+"..."
+		AppendMenu hMenu.2, 0, $2030, VARIABLE_CONF_TEXT_LOCAL+"..."
+		AppendMenu hMenu.2, $800, 0, ""
+		AppendMenu hMenu.2, 0, $2040, VARIABLE_CONF_TEXT_SEARCH+"..."
+		AppendMenu hMenu.2, 0, $2050, VARIABLE_CONF_TEXT_CLONETAB+"..."
+		AppendMenu hMenu.2, $800, 0, ""
+		AppendMenu hMenu.2, 0, $2060, "Send URL to Chrome/Chromium"
+		AppendMenu hMenu.2, 0, $2070, "Send URL to Edge"
+		AppendMenu hMenu.2, 0, $2080, "Send URL to Firefox"
+		AppendMenu hMenu.2, $800, 0, ""
+		AppendMenu hMenu.2, 0, $2090, "User Agent"
+		AppendMenu hMenu.2, 0, $2100, "IScript GUI for Memoria"
+ title ISNAME+ISVersion+" - [12/"+ISProgress+"] - Tab & Stbar Session"
+    	stbar_ini
+    	gosub *WM_STBAR
+	oncmd gosub *syscommand, $112
+	GetSystemMenu hwnd, 0
+	hSystemMenu = stat
+	InsertMenu hSystemMenu, 0, $400, IDM_ADD1, "About ISMemoria"
+
+
+//DefaultURL
+if dir_cmdline = "" {
+	DEF_URL = VARIABLE_CONF_URL_FIRST
+	if VARIABLE_CONF_URL_FIRST = "include" {
+		exist dirinfo(1) + "\\index.htm"
+		if strsize = -1 {bcopy "html.pak",""+dir_cur+"\\index.htm"}
+			DEF_URL="file://"+dir_exe+"\\index.htm"
+		}
+	gosub *TAB_ADD
+}else{
+	DEF_URL = dir_cmdline
+	gosub *TAB_ADD
+	DEF_URL="file://"+dir_exe+"\\index.htm"
+}
+
+
+	title ""
+	oncmd gosub *windowcheck, $6
+	gosub *WM_SIZE
+	gosub *TAB_UPDATE
+//	onerror *ERROR
+	if sysinfo(33) > "98" {dialog "No memory - 98% or more"}
+	if sysinfo(33) > "80" {dialog "It seems that the PC memory is already quite used.\n("+sysinfo(33)+"% of total capacity.) \nIt is recommended to close programs that are not in use.\n\nPCのメモリが既にかなり使われているようです(総容量の"+sysinfo(33)+"%)。\n使わないプログラムを閉じることを推奨します。"}
+	stop
+
+//MENU AND TAB
+
+*MENU_UPDATE
+	stbar_resize
+	if iswindow_exitcode = "true" {end}
+	gosub *EVENT_URL
+	mi(1) = 1
+	if ( CCall2(dpCtrl(1), WV2_get_CanGoBack, 1, varptr(p1)) == 0 ){
+		if ( p1 ){ mi(3) = 0 }
+		else { mi(3) = 3 }
+	}
+	else { mi(3) = 3 }
+	SetMenuItemInfo hMenu, 0, 1, varptr(mi)
+	if ( CCall2(dpCtrl(1), WV2_get_CanGoForward, 1, varptr(p1)) == 0 ){
+		if ( p1 ){ mi(3) = 0 }
+		else { mi(3) = 3 }
+	}
+	else { mi(3) = 3 }
+	SetMenuItemInfo hMenu, 1, 1, varptr(mi)
+	DrawMenuBar hWnd0
+	return
+
+*TAB_GETINFO
+	sendmsg hTab, TCM_GETCURSEL, 0, 0 : iTab = stat
+	gosub *TAB_GETINFO2
+	return
+
+*TAB_GETINFO2
+	pTabInfo = 0
+	if ( iTab == -1 ){ return }
+	tci(0) = 8 : sendmsg hTab, TCM_GETITEMA, iTab, varptr(tci)
+	if ( stat == 0 ){ return }
+	pTabInfo = tci(6)
+	dupptr dpCtrl, WV2_DATA_SIZE * 28 + pTabInfo, 8, 4
+	return
+
+*TAB_SELECT
+	gosub *TAB_GETINFO
+	gosub *EVENT_URL
+	if ( pTabInfo == 0 ){ return }
+	pView = -1 : gosub *TAB_UPDATE
+	gosub *WM_SIZE
+	ret = CCall2(dpCtrl, WV2Ctrl_put_IsVisible, 1, 1)
+	return
+
+*TAB_UPDATE
+	gosub *TAB_GETINFO
+	gosub *EVENT_URL
+	if ( pTabInfo == 0 ){ return }
+	gosub *MENU_UPDATE
+	if ( CCall2(dpCtrl(1), WV2_get_DocumentTitle, 1, varptr(p1)) == 0 ){
+		if ( pView == -1 || pView == dpCtrl(1) ){ SetWindowTextW hWnd0, p1 }
+		tci(0) = 1 : tci(3) = p1
+		sendmsg hTab, TCM_SETITEMW, iTab, varptr(tci)
+		CoTaskMemFree p1
+	}
+	if ( pView == -1 || pView == dpCtrl(1) ){
+		if ( CCall2(dpCtrl(1), WV2_get_Source, 1, varptr(p1)) == 0 ){
+			SetWindowTextW hEditUrl, p1
+			CoTaskMemFree p1
+		}
+	}
+	sdim pszText
+	sendmsg hwnd, $D, 64, varptr(pszText)
+	gosub *WM_SIZE
+	return
+
+*TAB_ADD
+	if ( bAdd ){ return }
+	bAdd = 1
+	gosub *TAB_ADD2
+	gosub *EVENT_SET
+	gosub *TAB_SELECT
+	bufTmp = DEF_URL
+	SetWindowTextA hEditUrl, varptr(bufTmp)
+	gosub *CMD_NAVIGATE
+	bAdd = 0
+	return
+
+*TAB_ADD2
+	gosub *TAB_GETINFO
+	if ( pTabInfo ){
+		ret = CCall2(dpCtrl, WV2Ctrl_put_IsVisible, 1, 0)
+	}
+	sendmsg hTab, TCM_GETITEMCOUNT, 0, 0 : iTab = stat
+	tci(0) = 9 : tci(6) = 0
+	bufTmp = bufTmp : tci(3) = varptr(bufTmp)
+	sendmsg hTab, TCM_INSERTITEMA, iTab, varptr(tci)
+	sendmsg hTab, TCM_SETCURSEL, iTab, 0
+	curCtrl = WebView2_CreateCtrl(pEnv, hWnd0)
+	curView = WebView2_GetView(curCtrl)
+	if ( curCtrl == 0 || curView == 0 ){
+		gosub *TAB_DEL
+		return
+	}
+	return
+
+*TAB_DEL
+	sendmsg hTab, TCM_GETITEMCOUNT, 0, 0
+	if ( stat <= 1 ){ return }
+	if ( bDel ){ return }
+	bDel = 1
+	gosub *TAB_GETINFO2
+	if ( pTabInfo == 0 ){ return }
+	ret = CCall2(dpCtrl(0), WV2Ctrl_Close, 0)
+	WebView2_Release dpCtrl(1)
+	WebView2_Release dpCtrl(0)
+	HeapFree GetProcessHeap(), 0, pTabInfo
+	sendmsg hTab, TCM_DELETEITEM, iTab, 0
+	if ( iTab ){ iTab-- }
+	sendmsg hTab, TCM_SETCURSEL, iTab, 0
+	gosub *TAB_SELECT
+	bDel = 0
+	return
+
+//EVENT
+
+*EVENT_TITLE
+	gosub *EVENT_URL
+	pView = wparam : gosub *TAB_UPDATE
+	return
+
+*EVENT_COMPLETE
+	gosub *EVENT_URL
+	pView = wparam : gosub *TAB_UPDATE
+	return
+
+*EVENT_FULLSCR
+	gosub *TAB_GETINFO
+	gosub *EVENT_URL
+	if ( pTabInfo == 0 ){ return }
+	if ( dpCtrl(1) != wparam ){ return }
+	if ( CCall2(dpCtrl(1), WV2_GetFullScreen, 1, varptr(p1)) ){ return }
+	if ( p1 ){
+		ShowWindow hEditUrl, 0
+		ShowWindow hTab, 0
+		wndInfo(0) = GetWindowLong(hWnd0, -20)
+		wndInfo(1) = GetWindowLong(hWnd0, -16)
+		wndInfo(2) = GetMenu(hWnd0)
+		SetMenu hWnd0, 0
+		if ( WebView2_GetWndRect(hWnd0, rc) == 0 ){ return }
+		wndInfo(3) = rc(0), rc(1), rc(2), rc(3)
+		SetWindowLong hWnd0, -20, 0
+		SetWindowLong hWnd0, -16, wndInfo(1) & 0xff000000
+		if ( WebView2_GetMonitorRect(hWnd0, rc) == 0 ){ return }
+		SetWindowPos hWnd0, -1, rc(0), rc(1), rc(2), rc(3), 0x220
+	}
+	else {
+		ShowWindow hEditUrl, 5
+		ShowWindow hTab, 5
+		SetWindowLong hWnd0, -20, wndInfo(0)
+		SetWindowLong hWnd0, -16, wndInfo(1)
+		if ( wndInfo(2) ){ SetMenu hWnd0, wndInfo(2) }
+		if ( wndInfo(0) & 0x8 ){ p1 = -1 } else { p1 = -2 }
+		SetWindowPos hWnd0, p1, wndInfo(3), wndInfo(4), wndInfo(5), wndInfo(6), 0x220
+		ShowWindow hWnd0, 1
+	}
+	return
+
+*EVENT_NEWWND
+	gosub *EVENT_URL
+	if ( lparam == 0 || bAdd != 0 ){ return }
+	bAdd = 1
+	pNewWnd = lparam
+	if ( CCall2(pNewWnd, WV2NewWnd_GetDeferral, 1, varptr(pDef)) == 0 ){
+		PostMessage hWnd0, 0x9004, 0, 0
+		bAdd = 1
+	}
+	return
+
+*EVENT_NEWWND2
+	gosub *EVENT_URL
+	if ( CCall2(pNewWnd, WV2NewWnd_put_Handled, 1, 1) == 0 ){
+		if ( CCall2(pNewWnd, WV2NewWnd_get_Uri, 1, varptr(p1)) == 0 ){
+			gosub *TAB_ADD2
+			ret = CCall2(pNewWnd, WV2NewWnd_put_NewWindow, 1, curView)
+			gosub *EVENT_SET
+			gosub *TAB_SELECT
+		}
+	}
+	ret = CCall2(pDef, WV2Deferral_Complete, 0)
+	WebView2_Release pDef
+	bAdd = 0
+	return
+
+*EVENT_SET
+	pTabInfo = 0
+	pTabInfo = HeapAlloc(GetProcessHeap(), 8, WV2_DATA_SIZE * 28 + 8)
+	if ( pTabInfo == 0 ){ return }
+	dupptr dp, pTabInfo, WV2_DATA_SIZE * 4, 4
+	WebView2_EventInit WV2_EVENT_TITLECHANGED, hWnd0, 0x9000, dp
+	ret = CCall2(curView, WV2_add_DocumentTitleChanged, 2, dp, varptr(dp(6)))
+
+	dupptr dp, WV2_DATA_SIZE * 4 + pTabInfo, WV2_DATA_SIZE * 4, 4
+	WebView2_EventInit WV2_EVENT_NAVIGATIONCOMPLETED, hWnd0, 0x9001, dp
+	ret = CCall2(curView, WV2_add_NavigationCompleted, 2, dp, varptr(dp(6)))
+
+	dupptr dp, WV2_DATA_SIZE * 8 + pTabInfo, WV2_DATA_SIZE * 4, 4
+	WebView2_EventInit WV2_EVENT_FULLSCREEN, hWnd0, 0x9002, dp
+	ret = CCall2(curView, WV2_add_FullScrChanged, 2, dp, varptr(dp(6)))
+
+	dupptr dp, WV2_DATA_SIZE * 12 + pTabInfo, WV2_DATA_SIZE * 4, 4
+	WebView2_EventInit WV2_EVENT_NEWWINDOW, hWnd0, 0x9003, dp
+	ret = CCall2(curView, WV2_add_NewWindowRequested, 2, dp, varptr(dp(6)))
+
+	dupptr dpCtrl, WV2_DATA_SIZE * 28 + pTabInfo, 8, 4
+	dpCtrl(0) = curCtrl, curView
+
+	tci(0) = 8 : tci(6) = pTabInfo
+	sendmsg hTab, TCM_SETITEMW, iTab, varptr(tci)
+	return
+
+*EVENT_URL
+	if ( pTabInfo == 0 ){ return }
+	p1 = (GetWindowTextLengthW(hEditUrl) + 1) * 2
+	sdim bufTmp, p1
+	GetWindowText hEditUrl, varptr(bufTmp), p1
+	urlTmp = bufTmp
+	return
+
+*windowcheck
+	if iswindow_exitcode = "true" {end}
+	if LOWORD(wparam)="1" {gosub *WM_SIZE:gosub *TAB_UPDATE}
+	if LOWORD(wparam)="2" {gosub *WM_SIZE:gosub *TAB_UPDATE}
+	stbar_ini
+	return
+
+//WIN32UI_CMD
+
+*CMD_BACK
+	gosub *TAB_GETINFO
+	gosub *EVENT_URL
+	if ( pTabInfo ){ ret = CCall2(dpCtrl(1), WV2_get_GoBack, 0) }
+	return
+
+*CMD_FORWARD
+	gosub *TAB_GETINFO
+	gosub *EVENT_URL
+	if ( pTabInfo ){ ret = CCall2(dpCtrl(1), WV2_get_GoForward, 0) }
+	return
+
+*CMD_RELOAD
+	gosub *TAB_GETINFO
+	gosub *EVENT_URL
+	if ( pTabInfo ){ ret = CCall2(dpCtrl(1), WV2_Reload, 0) }
+	return
+
+*CMD_NAVIGATE
+	tmp="false"
+	gosub *TAB_GETINFO
+	gosub *EVENT_URL
+	title bufTmp
+	if instr(bufTmp,0,"https://")=0{tmp="true"}
+	if instr(bufTmp,0,"http://")=0{tmp="true"}
+	if instr(bufTmp,0,"edge://")=0{tmp="true"}
+	if instr(bufTmp,0,"file://")=0{tmp="true"}
+	if instr(bufTmp,0,"mailto://")=0{tmp="true"}
+	if instr(bufTmp,0,"ftp://")=0{bufTmp="https://"+bufTmp:tmp="true"}
+	if instr(bufTmp,0,"ftps://")=0{bufTmp="https://"+bufTmp:tmp="true"}
+	if instr(bufTmp,0,"sftp://")=0{bufTmp="https://"+bufTmp:tmp="true"}
+	if tmp="true"{
+		GetWindowTextW hEditUrl, varptr(bufTmp), p1
+		ret = CCall2(dpCtrl(1), WV2_Navigate, 1, varptr(bufTmp))
+	}else{
+		wvurl = VARIABLE_CONF_URL_SEARCH+bufTmp
+		gosub *CMD_WV_RUN
+	}
+	return
+	
+*CMD_NEW_TAB
+	gosub *TAB_ADD
+	return
+
+*CMD_CLONE_TAB
+	gosub *EVENT_URL
+	if ( pTabInfo == 0 ){ return }
+	p1 = (GetWindowTextLengthW(hEditUrl) + 1) * 2
+	sdim bufTmp, p1
+	GetWindowText hEditUrl, varptr(bufTmp), p1
+	wvurl = bufTmp
+	gosub *CMD_WV_RUN
+	return
+
+*CMD_DEL_TAB
+	gosub *TAB_DEL
+	return
+
+*CMD_ABOUT
+	gosub *EVENT_URL
+	ver_about="use"
+	screen 4, 500, 300, 4
+	width ,,(ginfo(0)-300),(ginfo(1)-300)
+	gsel 4,2
+	DwmSetWindowAttribute hwnd,DWMWA_USE_IMMERSIVE_DARK_MODE,VARIABLE_CONF_WINDOW_COLOR,4
+	title "About"
+	GetWindowLong hwnd, -16
+	SetWindowLong hwnd, -16, stat - $20000
+	SetWindowLong hwnd, -16, stat - $80000
+	about_text="ABATBeliever "+ISNAME+" "+ISVersion+"\nBuild : "+ISBuildNumber+" ("+ISBuildDay+")\n\nCopyright (C) 2021-2023 ABATBeliever.\n\nhttps://abatbeliever.github.io/InternetStroller/\n\n"
+	about_text=about_text+"==============================\n"+sysinfo(0)+"\nUser: "+sysinfo(1)+"\nNetwork-PCName: "+sysinfo(2)+"\nMemory Utilization: "+sysinfo(33)+"%\n=============================="
+	if sysinfo(33) > "80" {about_text=about_text+"\n\nIt seems that the PC memory is already quite used. ("+sysinfo(33)+"% of total capacity.) \nIt is recommended to close programs that are not in use.\nPCのメモリが既にかなり使われているようです(総容量の"+sysinfo(33)+"%)。\n使わないプログラムを閉じることを推奨します。"}
+	about_text=about_text+"\nTHE LICENSE IS WRITTEN IN EULA.TXT\n\n\n\n\n\n\n\n							ABATBeliever"
+	mesbox about_text, 500, 270, 0, 0
+	pos 210,270:button gosub VARIABLE_CONF_TEXT_CLOSE,*CMD_ABOUT_2
+	DwmSetWindowAttribute hwnd,DWMWA_USE_IMMERSIVE_DARK_MODE,VARIABLE_CONF_WINDOW_COLOR,4
+	return
+	
+*CMD_ABOUT_2
+	ver_about="unuse"
+	gsel 4,-1
+	return
+
+*CMD_UPDATE
+	if ISDeepVersion!="Stable" {dialog "This is Beta Build of "+ISNAME+"- "+ISVersion : return}
+	wvurl = VARIABLE_CONF_URL_BROWSERUPDATE+ISCommonVer
+	gosub *CMD_WV_RUN
+	return
+	
+*CMD_CAPTURE
+	gosub *EVENT_URL
+	modTaskSelect=modTasks("Internet Stroller Memoria - Capture","Which format do you prefer?\nどっちの形式にしますか?","PNG/PDF/Cancel","PNG\nPDF\nCancel")
+		if modTaskSelect="1" {gosub *CMD_CAPTURE1}
+		if modTaskSelect="2" {gosub *CMD_CAPTURE2}
+		if modTaskSelect="3" {return}
+		if modTaskSelect="0" {return}
+		if modTaskSelect="-1" {return}
+	return
+
+*CMD_CAPTURE1
+	dialog "png", 17
+	if ( stat == 0 ){ return }
+	if ( SHCreateStreamOnFileEx(refstr, 0x1002, 0x80, 1, 0, p1) ){ return }
+	gosub *TAB_GETINFO
+	if ( pTabInfo == 0 ){ return }
+	dupptr dp, WV2_DATA_SIZE * 20 + pTabInfo, WV2_DATA_SIZE * 4, 4
+	WebView2_EventInit WV2_EVENT_CAPTURE, hWnd0, 0, dp
+	ret = CCall2(dpCtrl(1), WV2_CapturePreview, 3, 0, p1, dp)
+	WebView2_EventWait dp
+	WebView2_Release p1
+	SetTrayIconFile "user32.dll"
+	CreateTrayIcon "",1,0
+	PopupBalloonTip ISNAME+" "+ISVERSION,"Captured PNG",2,0
+	return
+
+*CMD_CAPTURE2
+	if ( bPDF ){ return }
+	dialog "pdf", 17
+	if ( stat == 0 ){ return }
+	gosub *TAB_GETINFO
+	if ( pTabInfo == 0 ){ return }
+	bPDF = 1
+	mi(1) = 1 : mi(3) = 3
+	dupptr dp, WV2_DATA_SIZE * 24 + pTabInfo, WV2_DATA_SIZE * 4, 4
+	WebView2_EventInit WV2_EVENT_PRINTTOPDF, hWnd0, 0x9005, dp
+	sdim bufTmp, (strlen(refstr) + 1) * 2
+	cnvstow bufTmp, refstr
+	ret = CCall2(dpCtrl(1), WV2_PrintToPdf, 3, varptr(bufTmp), 0, dp)
+	SetTrayIconFile "user32.dll"
+	CreateTrayIcon "",1,0
+	PopupBalloonTip ISNAME+" "+ISVERSION,"Captured PDF",2,0
+	return
+
+*CMD_INICONF
+	dialog "File : "+dirinfo(1)+"\\ISConfig.ini\n\nVersion "+VARIABLE_CONF_INIFILEVER+"\nWriter : "+VARIABLE_CONF_INIFILEWRITER+"\nLanguage : "+VARIABLE_CONF_INIFILELANGUAGE
+	return
+	
+*CMD_DOWNLOAD
+	gosub *TAB_GETINFO
+	if ( pTabInfo == 0 ){ return }
+	if ( CCall2(dpCtrl(1), WV2_IsDownloadDialogOpen, 1, varptr(p1)) ){ return }
+	if ( p1 ){ p1 = WV2_CloseDownloadDialog } else { p1 = WV2_OpenDownloadDialog }
+	ret = CCall2(dpCtrl(1), p1, 0)
+	return
+
+*CMD_LOCAL
+	gosub *TAB_GETINFO
+	gosub *EVENT_URL
+	gosub *TAB_UPDATE
+	dialog "",16,""
+	if stat = 0 : stop
+	wvurl = "file://"+refstr
+	gosub *CMD_WV_RUN
+	return
+
+*CMD_HISTORY
+	wvurl = "edge://history"
+	gosub *CMD_WV_RUN
+	stop
+
+//MANAPAD
+
+*CMD_MANAPAD
+	mana="already"
+	screen 3,210,280,4
+	gsel 3,2
+	DwmSetWindowAttribute hwnd,DWMWA_USE_IMMERSIVE_DARK_MODE,VARIABLE_CONF_WINDOW_COLOR,4
+	GetWindowLong hwnd, -16
+	SetWindowLong hwnd, -16, stat - $20000
+	SetWindowLong hwnd, -16, stat - $80000
+	GetWindowLong hwnd, -20
+	SetWindowLong hwnd, -20, stat | WS_EX_LAYERED
+	SetLayeredWindowAttributes hwnd, 0, 80*255/100, 2
+	title "ManaPAD"
+	objsize 70,70
+	pos 0,0:button gosub VARIABLE_CONF_TEXT_SENDBACK,*CMD_BACK
+	pos 70,0:button gosub VARIABLE_CONF_TEXT_SENDFORWARD,*CMD_FORWARD
+	pos 140,0:button gosub VARIABLE_CONF_TEXT_SENDRELOAD,*CMD_RELOAD
+	pos 0,70:button gosub VARIABLE_CONF_TEXT_NEWTAB,*CMD_NEW_TAB
+	pos 70,70:button gosub VARIABLE_CONF_TEXT_CLONETAB,*CMD_CLONE_TAB
+	pos 140,70:button gosub VARIABLE_CONF_TEXT_DELETETAB,*CMD_DEL_TAB
+	pos 0,140:button gosub VARIABLE_CONF_TEXT_LOCAL,*CMD_LOCAL
+	pos 70,140:button gosub "Close",*MANA_CLOSE
+	pos 140,140:button gosub VARIABLE_CONF_TEXT_ATENE_CLOSE,*ISWINDOWEXIT
+	objsize 140,35
+	helpurl="https://"
+	searchword=""
+	pos 0,210:input helpurl
+	pos 0,245:input searchword
+	objsize 70,35
+	pos 140,210:button VARIABLE_CONF_TEXT_ATENE_GOURL,*MANA_NAVIGATE
+	pos 140,245:button VARIABLE_CONF_TEXT_ATENE_SEARCH,*MANA_SEARCH
+	gsel 0
+	return
+
+*MANA_NAVIGATE
+	wvurl = helpurl
+	gosub *CMD_WV_RUN
+	stop
+
+*MANA_SEARCH
+	wvurl = VARIABLE_CONF_URL_SEARCH+searchword
+	gosub *CMD_WV_RUN
+	stop
+
+*MANA_CLOSE
+	mana="no"
+	gsel 3,-1
+	stop
+
+//FUNC
+
+*CMD_FUNC
+	funcmanager="already"
+	screen 5,300,280,4
+	width ,,(ginfo(0)-30),(ginfo(1)-50)
+	gsel 5,2
+	DwmSetWindowAttribute hwnd5,DWMWA_USE_IMMERSIVE_DARK_MODE,VARIABLE_CONF_WINDOW_COLOR,4
+	GetWindowLong hwnd, -16
+	SetWindowLong hwnd, -16, stat - $20000
+	SetWindowLong hwnd, -16, stat - $80000
+	GetWindowLong hwnd, -20
+	SetWindowLong hwnd, -20, stat | WS_EX_LAYERED
+	SetLayeredWindowAttributes hwnd, 0, 80*255/100, 2
+	title VARIABLE_CONF_TEXT_FUNCTION_NAME
+	objsize 300,40
+	pos 0,0:button gosub VARIABLE_CONF_TEXT_UPDATE, *CMD_UPDATE
+	pos 0,40:button gosub VARIABLE_CONF_TEXT_INICONFIG, *CMD_INICONF
+	pos 0,80:button gosub "Professional Features(Include beta)", *CMD_FUNC_ADVANCED
+	hButton = objinfo(stat, 2)
+	pos 0,120:button gosub VARIABLE_CONF_TEXT_ISABOUT, *CMD_ABOUT
+	pos 0,240:button gosub VARIABLE_CONF_TEXT_CLOSE, *CMD_FUNC_CLOSE
+	DwmSetWindowAttribute hwnd,DWMWA_USE_IMMERSIVE_DARK_MODE,VARIABLE_CONF_WINDOW_COLOR,4
+	gsel 0
+	return
+
+*CMD_FUNC_CLOSE
+	funcmanager="no"
+	gsel 5,-1
+	return
+
+*CMD_FUNC_ADVANCED
+	GetWindowRect hButton, varptr(RECT)
+	TrackPopupMenu hMenu.1, $100, RECT.2, RECT.1, 0, hwnd, 0
+	if stat = 0 : stop
+	if stat = $10 : ShellExecuteW 0, "open", "notepad", dirinfo(1)+"\\ISConfig.ini", 0, 10
+	if stat = $20 : gosub *CMD_FUNC_CONFDEL
+	if stat = $30 : gosub *CMD_FUNC_INDEXDEL
+	if stat = $40 : gosub *CMD_FUNC_TASKMGR
+	if stat = $50 : gosub *CMD_FUNC_EXECUTE
+	if stat = $60 : gosub *WM_SideBar_JUDGE
+	if stat = $70 : wvurl="edge://about" : gosub *CMD_WV_RUN
+	if stat = $80 : wvurl="http://hsp.tv/play/pforum.php?mode=pastwch&num=47647" : gosub *CMD_WV_RUN
+	if stat = $90 : wvurl="https://blog.goo.ne.jp/hiro239415/e/5041aec497e02427c2b123aef07977e3" : gosub *CMD_WV_RUN
+	if stat = $100 : wvurl="https://www.nuget.org/packages/Microsoft.Web.WebView2" : gosub *CMD_WV_RUN
+	if stat = $110 : wvurl="https://www.youtube.com/@ABELLandATENE" : gosub *CMD_WV_RUN
+	if stat = $120 : wvurl=VARIABLE_CONF_URL_REPORT : gosub *CMD_WV_RUN
+	if stat = $130 : gosub *CMD_CHANGEUA
+	if stat = $140 : gosub *ISDarkMode : return
+	if stat = $150 : gosub *IScript : return
+	if stat = $990 : gosub *ISWindowEXIT
+	DwmSetWindowAttribute hwnd,DWMWA_USE_IMMERSIVE_DARK_MODE,VARIABLE_CONF_WINDOW_COLOR,4
+	gsel 0
+	stop
+
+*CMD_FUNC_CONFDEL
+	dialog "ISConfig.ini will deleted.\nCreate configuration from scratch.\nWhat language do you want?\nEnglish(Y)/Japanese(N)\n\nISConfig.iniの設定を新しく作ります。\n言語はどうしますか? 英語(Y)/日本語(N)", 3, "conf.ini Select - English/Japanese"
+	conf_lang=stat
+ 	if conf_lang="6" {bcopy "iE.pak",""+dir_cur+"\\ISConfig.ini"}
+ 	if conf_lang="7" {bcopy "iJ.pak",""+dir_cur+"\\ISConfig.ini"}
+ 	gosub *loadini
+ 	title "Loaded(New Setting)"
+	return
+
+*CMD_FUNC_INDEXDEL
+	bcopy "html.pak",""+dir_cur+"\\index.htm"
+ 	dialog "SUCSESS"
+	return
+	
+*CMD_WV_RUN
+	gsel 0
+	NOW_DEF_URL = DEF_URL
+	DEF_URL = wvurl
+	gosub *TAB_ADD
+	DEF_URL = NOW_DEF_URL
+	return
+
+*CMD_CHANGEUA
+ChangeUAWindow="yes"
+screen 7,400,200
+width ,,(ginfo(0)-30),(ginfo(1)-50)
+title "Change User Agent - ユーザエージェント文字列の変更"
+	GetWindowLong hwnd, -16
+	SetWindowLong hwnd, -16, stat - $20000
+	SetWindowLong hwnd, -16, stat - $40000
+	SetWindowLong hwnd, -16, stat - $80000
+gsel 7,2
+
+sdim ua,10240
+pos 30,10:input ua,340,100
+objsize 70,30
+pos 300,115:button gosub "Change",*CMD_CHANGEUA_RUN
+objsize 120,30:pos 140,150:button gosub "Close",*CMD_CHANGEUA_CLOSE
+DwmSetWindowAttribute hwnd,DWMWA_USE_IMMERSIVE_DARK_MODE,VARIABLE_CONF_WINDOW_COLOR,4
+return
+
+*CMD_CHANGEUA_RUN
+if ua=""{return}
+sdim ua1,10240
+cnvstow ua1, ua
+dialog "UserAgent will:\n\n"+ua+"\n\nUA can be changed for each tab.\nUA changes can affect processes and behavior.\nUAはタブごとに制御されます。\nUA変更は動作に悪影響を及ぼすかもしれない。",3,"UA Change"
+if stat=7{return}
+UADefault="no"
+ret = CCall2(pView, 3, 1, varptr(pSettings))
+ret = CCall2(pSettings, 22, 1, varptr(ua1))
+WebView2_Release pSettings
+gosub *CMD_Reload
+dialog "OK",0,"UA Change"
+return
+
+*CMD_CHANGEUA_CLOSE
+ChangeUAWindow="un"
+gsel 7,-1
+return
+
+*IScript
+if VARIABLE_CONF_ISCRIPTENABLE != 0 {return}
+if funcmanager="already"{gosub *CMD_FUNC_CLOSE}
+modTaskSelect=modTasks("IScript GUI for Memoria - 0.15","IScript is a script language.\nIScriptはInternetStrollerを制御できるスクリプト言語です。","Commands executed are verified, but may cause unintended problems or crashes.\n実行されるコマンドは検証されますが、意図しない問題やクラッシュを起こす可能性があります。","Okay\nCancel")
+if modTaskSelect="1" {
+gosub *IScript_GUI}
+return
+
+*IScript_GUI
+scr8="use"
+screen 8,280,200
+gsel 8,2
+DwmSetWindowAttribute hwnd,DWMWA_USE_IMMERSIVE_DARK_MODE,VARIABLE_CONF_WINDOW_COLOR,4
+GetWindowLong hwnd, -16
+SetWindowLong hwnd, -16, stat - $20000
+SetWindowLong hwnd, -16, stat - $80000
+title "IScript GUI for Memoria 0.15"
+IScriptPath=""
+pos 30,20:input IScriptPath,240,20
+pos 110,160:button gosub "Close",*IScript_END
+objsize 20,20:pos 10,20:button gosub "...",*IScript_Path
+objsize 260,30:pos 10,40:button gosub "Execute / Stop",*IScript_RUNCheck
+
+gsel 0
+IScript_Running=0
+return
+
+*IScript_Path
+dialog "isc",16,""
+if stat = 0 : return
+gsel 8
+IScriptPath=refstr
+objprm 0,getpath (refstr, 8)
+gsel 0
+return
+
+*IScript_RUNCheck
+IScript_SupportVer=1
+if IScriptPath=""{return}
+
+if IScript_Running!=0{
+	dialog "Currently running.\nDo you want to force stop?\n\n現在実行中です強制停止しますか?",3,"IScript"
+	if stat=6{IScript_loadint=(int(IScriptLimit)+99):dialog "Changed the loading address.\n読み込み番地を変更しました",1,"":IScript_Running=0:return}
+	return
+}
+
+IScript_Running=1
+notesel IScriptBuffer
+noteload IScriptPath
+
+IScript_Name="UNKNOWN NAME"
+IScript_Memo=""
+IScript_Writer="Unknown Writer"
+IScript_NeedVer=IScript_SupportVer
+		 
+repeat notemax
+ noteget IScriptCHK,cnt
+ split IScriptCHK, " ", IScriptCHK
+ if IScriptCHK(0) = "define"{
+	 if stat=5 {
+		 IScript_Name=IScriptCHK(1)
+		 IScript_Memo=IScriptCHK(2)
+		 IScript_Writer=IScriptCHK(3)
+		 IScript_NeedVer=int(IScriptCHK(4))
+		 }
+	}
+loop
+
+if IScript_Writer=sysinfo(1){IScript_Writer=IScript_Writer+"[You?]"}
+IScriptCHK="Program Name:"+IScript_Name+"\nMemo:"+IScript_Memo+"\nWriter:"+IScript_Writer+"\nNeed Version:"+IScript_NeedVer
+
+IScriptDialog=""+strsize+"Byte\nLinage:"+notemax+"\nDo you want to run this file?\nこのファイルを実行しますか?\n\n"+IScriptCHK
+
+if IScript_NeedVer>IScript_SupportVer{IScriptDialog=IScriptDialog+"\n\nUnknown Version isc!"}
+
+dialog IScriptDialog,2,"Check"
+if stat=7{IScript_Running=0:return}
+//設定初期化
+IScriptIgnoreFlag="N"//無視フラグ破棄
+IScriptChoice="6"//選択は最初は「Y」判定とする
+IScriptWatchDog=0
+IScript_loadint=0
+IScriptLimit=(notemax+1)
+gosub *IScript_InterPreter
+return
+
+*IScript_InterPreter
+if IScriptWatchDog = 256 {dialog "IScriptWatchDogTimeOut",1,"IScript Anti Crash Serv.":IScript_Running=0:return}
+IScriptWatchDog=IScriptWatchDog+1
+if int(IScript_loadint) > int(IScriptLimit) {dialog "Successfully terminated.\n正常に終了されました\n\nReturnValue 返り値:0\nFinal Register 最終レジスタ:"+IScript_loadint+"/"+IScriptLimit:IScript_Running=0:return}
+noteload IScriptPath
+noteget IScriptSTR,IScript_loadint
+split IScriptSTR, " ", IScriptSpilit
+		if IScriptSpilit(0) = "}" {IScriptIgnoreFlag="N"}//「}」命令
+		if IScriptIgnoreFlag="N"{//選択は有効か
+	
+			switch IScriptSpilit(0)
+				case "point":swbreak//jumptoコマンドの移動先。普段は無視
+				
+				case "define":swbreak//定義。常に無視
+				
+				case "memo":swbreak//メモ用。常に無視
+
+				case "popup"		
+					if stat>1{dialog strmid(IScriptSTR, 6, 1024),0,"IScript: "+IScriptPath}
+					swbreak
+				
+				case "choice"//選択肢付きdialogコマンドに相当。はい、いいえの値が「IScriptChoice」に保存され、ifコマンドで使用される。
+					if stat>1{dialog strmid(IScriptSTR, 6, 1024),2,"IScript: "+IScriptPath : IScriptChoice=stat}
+					swbreak
+					
+				case "openwnd"
+					if stat!=2{swbreak}
+					wvurl=IScriptSpilit(1):gosub *CMD_WV_RUN
+					swbreak
+				
+				case "if"//if分岐。最後の「choice」コマンドの選択肢で分岐される。あっていない場合、「IScriptIgnoreFlag」が有効になりコマンドを実行しない。「}」コマンドで初期化
+					if stat!=2{swbreak}
+					if IScriptSpilit(1)="choice=Y{" {
+						if IScriptChoice!="6"{IScriptIgnoreFlag="Y"}
+						}
+					if IScriptSpilit(1)="choice=N{" {
+						if IScriptChoice!="7"{IScriptIgnoreFlag="Y"}
+					}
+					if IScriptSpilit(1)="select=1{" {
+						if IScriptChoice!="1"{IScriptIgnoreFlag="Y"}
+					}
+					if IScriptSpilit(1)="select=2{" {
+						if IScriptChoice!="2"{IScriptIgnoreFlag="Y"}
+					}
+					if IScriptSpilit(1)="select=3{" {
+						if IScriptChoice!="3"{IScriptIgnoreFlag="Y"}
+					}
+					if IScriptSpilit(1)="select=4{" {
+						if IScriptChoice!="4"{IScriptIgnoreFlag="Y"}
+					}
+					if IScriptSpilit(1)="select=5{" {
+						if IScriptChoice!="5"{IScriptIgnoreFlag="Y"}
+					}
+					if IScriptSpilit(1)="select=0{" {
+						if IScriptChoice!="0"{IScriptIgnoreFlag="Y"}
+					}
+					swbreak
+
+				case "select3"
+					if stat != 5{dialog "The ERR 'select3' "+stat:swbreak}
+					split IScriptSpilit(4), ",", IScriptTMP
+					if stat != 3{dialog "The ERR 'select3',"+stat+"\n"+IScriptTMP:swbreak}
+					dwFlags = 0
+					dwFlags = TDF_ALLOW_DIALOG_CANCELLATION
+					DialogVistaEx str(IScriptSpilit(1)),str(IScriptSpilit(2)),str(IScriptSpilit(3)),"",str(IScriptTMP(0))+"\n"+str(IScriptTMP(1))+"\n"+str(IScriptTMP(2)), 3, 4
+					if stat = 101 {IScriptChoice="1" : swbreak}
+					if stat = 102 {IScriptChoice="2" : swbreak}
+				    if stat = 103 {IScriptChoice="3" : swbreak}
+					if stat = 104 {IScriptChoice="4" : swbreak}
+					if stat = 105 {IScriptChoice="5" : swbreak}
+					if stat = 2 {IScriptChoice="0" : swbreak}
+					dialog "Fatal ERR(select3)":IScript_loadint=(notemax+99)
+					swbreak
+					
+				case "select4"
+					if stat != 5{dialog "The ERR 'select4' "+stat:swbreak}
+					split IScriptSpilit(4), ",", IScriptTMP
+					if stat != 4{dialog "The ERR 'select4',"+stat+"\n"+IScriptTMP:swbreak}
+					dwFlags = 0
+					dwFlags = TDF_ALLOW_DIALOG_CANCELLATION
+					DialogVistaEx str(IScriptSpilit(1)),str(IScriptSpilit(2)),str(IScriptSpilit(3)),"",str(IScriptTMP(0))+"\n"+str(IScriptTMP(1))+"\n"+str(IScriptTMP(2))+"\n"+str(IScriptTMP(3)), 3, 4
+					if stat = 101 {IScriptChoice="1" : swbreak}
+					if stat = 102 {IScriptChoice="2" : swbreak}
+				    if stat = 103 {IScriptChoice="3" : swbreak}
+					if stat = 104 {IScriptChoice="4" : swbreak}
+					if stat = 105 {IScriptChoice="5" : swbreak}
+					if stat = 2 {IScriptChoice="0" : swbreak}
+					dialog "Fatal ERR(select4)":IScript_loadint=(notemax+99)
+					swbreak
+					
+				case "select5"
+					if stat != 5{dialog "The ERR 'select5' "+stat:swbreak}
+					split IScriptSpilit(4), ",", IScriptTMP
+					if stat != 5{dialog "The ERR 'select5',"+stat+"\n"+IScriptTMP:swbreak}
+					dwFlags = 0
+					dwFlags = TDF_ALLOW_DIALOG_CANCELLATION
+					DialogVistaEx str(IScriptSpilit(1)),str(IScriptSpilit(2)),str(IScriptSpilit(3)),"",str(IScriptTMP(0))+"\n"+str(IScriptTMP(1))+"\n"+str(IScriptTMP(2))+"\n"+str(IScriptTMP(3))+"\n"+str(IScriptTMP(4)), 3, 4
+					if stat = 101 {IScriptChoice="1" : swbreak}
+					if stat = 102 {IScriptChoice="2" : swbreak}
+				    if stat = 103 {IScriptChoice="3" : swbreak}
+					if stat = 104 {IScriptChoice="4" : swbreak}
+					if stat = 105 {IScriptChoice="5" : swbreak}
+					if stat = 2 {IScriptChoice="0" : swbreak}
+					dialog "Fatal ERR(select5)":IScript_loadint=(notemax+99)
+					swbreak
+
+				case "jump"//ジャンプしまーす
+					if stat!=2{dialog "The ERR 'jump'\n"+stat:swbreak}
+					if int(IScriptSpilit(1)) > int(notemax+1) {dialog "The ERR 'jump'\nRequest Register:"+str(IScriptSpilit(1))+"\nValid Last Address:"+str(notemax+1):swbreak}
+					if IScript_Trust = "1"{IScript_loadint = int(int(IScriptSpilit(1))-2):swbreak}
+					IScript_loadint = int(int(IScriptSpilit(1))-2)
+					swbreak
+					
+				case "close" : IScript_loadint=(notemax+99):swbreak
+
+				case "jumpto"//ジャンプしまーす
+					if stat!=2{dialog "The ERR 'JumpTo'":swbreak}
+					repeat notemax
+						noteget IScriptJumpSTR,cnt
+						split IScriptJumpSTR, " ", IScriptJumpSpilit
+						if IScriptJumpSpilit(0) = "point"{
+							if stat=2{
+								if str(IScriptSpilit(1))=str(IScriptJumpSpilit(1)) {IScript_loadint = int(cnt-1):swbreak}//まとめるとpoint命令しかなかった場合配列が破綻
+								}
+						}
+					loop
+					dialog "The ERR 'JumpTo', Not found"
+					swbreak
+				
+				case "" : swbreak//空行は無視
+			
+			default
+				if IScriptSpilit(0) != "}"{dialog "Err at "+str(IScript_loadint+1)+"\n\n'"+IScriptSTR+"' ("+str(stat-1)+")\n\n"+IScriptSTR}
+				swbreak
+			swend
+	}
+IScript_loadint=IScript_loadint+1
+gosub *IScript_InterPreter
+return
+
+*IScript_END
+scr8=""
+gsel 8,-1
+gsel 0
+return
+
+//URLPUSH
+*Browser_PUSH_Chrome
+pushbrowser="chrome"
+gosub *Browser_PUSH_RUN
+return
+
+*Browser_PUSH_Edge
+pushbrowser="msedge"
+gosub *Browser_PUSH_RUN
+return
+
+*Browser_PUSH_Firefox
+pushbrowser="firefox"
+gosub *Browser_PUSH_RUN
+return
+
+*Browser_PUSH_RUN
+if ( pTabInfo == 0 ){ return }
+p1 = (GetWindowTextLengthW(hEditUrl) + 1) * 2
+sdim bufTmp, p1
+GetWindowText hEditUrl, varptr(bufTmp), p1
+urlTmp = bufTmp
+ShellExecuteW 0, "open", pushbrowser, urltmp, 0, 10
+gsel 0
+return
+
+//pop
+*POP_URL
+	GetWindowRect hButton1, varptr(RECT1)
+	TrackPopupMenu hMenu.2, $100, RECT1.2, RECT1.1, 0, hwnd, 0
+	if stat = 0 : stop
+	if stat = $2010 : gosub *POP_URL_1
+	if stat = $2020 : gosub *CMD_HISTORY
+	if stat = $2030 : gosub *CMD_LOCAL
+	if stat = $2040 : gosub *POP_URL_3
+	if stat = $2050 : gosub *CMD_CLONE_TAB
+	if stat = $2060 : gosub *Browser_PUSH_Chrome
+	if stat = $2070 : gosub *Browser_PUSH_Edge
+	if stat = $2080 : gosub *Browser_PUSH_Firefox
+	if stat = $2090 : gosub *CMD_CHANGEUA
+	if stat = $2100 : gosub *IScript
+return
+
+*POP_URL_1
+if ( pTabInfo == 0 ){ return }
+p1 = (GetWindowTextLengthW(hEditUrl) + 1) * 2
+sdim bufTmp, p1
+GetWindowText hEditUrl, varptr(bufTmp), p1
+wvurl = VARIABLE_CONF_URL_TRANSLATE+bufTmp
+gosub *CMD_WV_RUN
+return
+
+*POP_URL_2
+clipget wvurl, 10240
+wvurl=str(wvurl)
+dialog wvurl
+gosub *CMD_WV_RUN
+return
+
+*POP_URL_3
+if ( pTabInfo == 0 ){ return }
+p1 = (GetWindowTextLengthW(hEditUrl) + 1) * 2
+sdim bufTmp, p1
+GetWindowText hEditUrl, varptr(bufTmp), p1
+wvurl = VARIABLE_CONF_URL_SEARCH+bufTmp
+gosub *CMD_WV_RUN
+return
+
+//WINDOWMANAGER
+
+*WM_SIZE
+	if iswindow_exitcode = "true" {end}
+	gosub *WM_STBAR
+	stbar_resize
+	gosub *EVENT_URL
+	GetClientRect hWnd0, varptr(rc)
+	if ( IsWindowVisible(hEditUrl) ){
+		MoveWindow hEditUrl, 20, 25, rc(2) - 22, 20, 0
+		MoveWindow hTab, 0, 0, rc(2), 24, 0
+		p1 = 44
+	}
+	else { p1 = 0 }
+	gosub *TAB_GETINFO
+	if ( pTabInfo ){
+		WebView2_Size dpCtrl(0), 0, p1, rc(2), rc(3)-25
+	}
+
+	return
+
+*WM_STBAR
+	gsel 0
+	clrobj
+    objsize 20,20:pos 0,25:button gosub "",*POP_URL
+    hButton1 = objinfo(stat, 2)
+	stbar_ini
+	gosub *EVENT_URL
+	if ( pTabInfo == 0 ){ return }
+	p1 = (GetWindowTextLengthW(hEditUrl) + 1) * 2
+	sdim bufTmp, p1
+	GetWindowText hEditUrl, varptr(bufTmp), p1
+	STBarURL = bufTmp
+	stbar_resize
+	stbar_text ISVersion+" / Tab: "+(iTab+1)+" / URL : "+STBarURL
+	return
+
+*WM_CLOSE
+	sendmsg hTab, TCM_GETITEMCOUNT, 0, 0
+	repeat stat
+		iTab = cnt : gosub *TAB_DEL
+	loop
+	WebView2_Release pEnv
+	if ( hMenu ){ DestroyMenu hMenu }
+	return
+
+*WM_NOTIFY
+	if ( lparam == 0 ){ return }
+	dupptr dpHdr, lparam, 12, 4
+	if ( dpHdr(0) == hTab ){
+		if ( dpHdr(2) == -552 ){
+			sendmsg hTab, TCM_GETCURSEL, 0, 0
+			if ( stat == -1 ){ return }
+			iTab = stat : gosub *TAB_GETINFO2
+			if ( pTabInfo == 0 ){ return }
+			ret = CCall2(dpCtrl(0), WV2Ctrl_put_IsVisible, 1, 0)
+		}
+		if ( dpHdr(2) == -551 ){
+			gosub *TAB_SELECT
+			return
+		}
+		if ( dpHdr(2) == -5 ){
+			dim tchi, 3
+			GetCursorPos varptr(tchi)
+			ScreenToClient hTab, varptr(tchi)
+			sendmsg hTab, TCM_HITTEST, 0, varptr(tchi)
+			if ( stat == -1 ){ return }
+			iTab = stat : gosub *TAB_DEL
+			return
+		}
+	}
+	return
+
+*WM_COMMAND
+	if ( lparam == 0 && (wparam >> 16) == 0 ){
+		id = wparam & 0xffff
+		if ( id < 0x8000 || id >= (0x8000 + length(lbCmd)) ){ return }
+		gosub lbCmd(id - 0x8000)
+	}
+	return
+
+*WM_SideBar_JUDGE
+	return
+
+//ANOTHER
+
+*ISDarkMode
+	if VARIABLE_CONF_WINDOW_COLOR = int(0) {VARIABLE_CONF_WINDOW_COLOR=int(1)}else{VARIABLE_CONF_WINDOW_COLOR=int(0)}
+	DwmSetWindowAttribute hwnd0,DWMWA_USE_IMMERSIVE_DARK_MODE,VARIABLE_CONF_WINDOW_COLOR,4
+	return
+
+*CMD_FUNC_TASKMGR
+	gosub *TAB_GETINFO
+	if ( pTabInfo == 0 ){ return }
+	ret = CCall2(dpCtrl(1), WV2_OpenTaskManagerWindow, 0)
+	return
+	
+*CMD_FUNC_EXECUTE
+	screen 6, ginfo_dispx, ginfo_dispy, 2, , , 420, 340
+	title "Execute JavaScript - ISMemoria" : font "Consolas", 11 : hWnd6 = hwnd : objmode 2
+	if darkmode = "1" {DwmSetWindowAttribute hwnd,DWMWA_USE_IMMERSIVE_DARK_MODE,VARIABLE_CONF_WINDOW_COLOR,4 : cls 4}
+	sdim bufExec, 1024 : sdim bufRes, 1024
+	pos 0, 0 : objsize ginfo_winx, 20
+	button gosub "Execute Javascript", *BTN_EXEC : hBtnExec = objinfo_hwnd(stat)
+	p1 = (ginfo_winy - 20) / 2 : pos 0, 20
+	if ExecuteS!=""{bufExec=ExecuteS}else{bufExec="Input Here!"}
+	bufRes="Feedback Report..."
+	mesbox bufExec, ginfo_winx, p1 : hMbExec = objinfo_hwnd(stat)
+	pos 0, p1 + 20
+	mesbox bufRes, ginfo_winx, p1, 0: hMbRes = objinfo_hwnd(stat)
+	oncmd gosub *WM6_SIZE,  0x0005
+	oncmd gosub *WM6_CLOSE, 0x0010
+	SetWindowPos hWnd6, -1, 0, 0, 0, 0, 0x63
+	DwmSetWindowAttribute hwnd,DWMWA_USE_IMMERSIVE_DARK_MODE,VARIABLE_CONF_WINDOW_COLOR,4
+	if ExecuteS!=""{ExecuteS="":gosub *BTN_EXEC:gosub *WM6_CLOSE}
+	return
+
+*WM6_SIZE
+	GetClientRect hWnd6, varptr(rc)
+	rc(3) = (rc(3) - 20) / 2
+	MoveWindow hBtnExec, 0, 0, rc(2), 20, 1
+	MoveWindow hMbExec, 0, 20, rc(2), rc(3), 1
+	MoveWindow hMbRes, 0, rc(3) + 20, rc(2), rc(3), 1
+	return
+
+*WM6_CLOSE
+	SetWindowPos hWnd6, 0, 0, 0, 0, 0, 0x83
+	return 0
+
+*BTN_EXEC
+	gosub *TAB_GETINFO
+	if ( pTabInfo == 0 ){ return }
+	EnableWindow hBtnExec, 0
+	p1 = (GetWindowTextLengthW(hMbExec) + 1) * 2
+	sdim bufTmp, p1
+	GetWindowTextW hMbExec, varptr(bufTmp), p1
+	dupptr dp, WV2_DATA_SIZE * 16 + pTabInfo, WV2_DATA_SIZE * 4, 4
+	WebView2_EventInit WV2_EVENT_EXECUTESCRIPT, 0, 0, dp
+	if ( CCall2(dpCtrl(1), WV2_ExecuteScript, 2, varptr(bufTmp), dp) == 0 ){
+		WebView2_EventWait dp
+		if ( dp(WV2_DATA_WP) == 0 ){
+			if ( WebView2_CnvWinStr(dp(WV2_DATA_LP), bufTmp) ){
+				SetWindowTextA hMbRes, varptr(bufTmp)
+			}
+		}
+	}
+	EnableWindow hBtnExec, 1
+	return
+
+*syscommand
+if wparam = IDM_ADD1 {gosub *CMD_ABOUT : return}
+return
+
+*ERROR
+SetTrayIconFile "user32.dll"
+CreateTrayIcon "",1,0
+PopupBalloonTip "Crash Report (IS-"+ISCommonVer+")","ERROR Level:"+wparam+"\nPlease Report to "+developer,2,0
+end
+
+*loadini
+title ISNAME+ISVersion+" - [2/"+ISProgress+"]
+
+VARIABLE_CONF_INIFILEWRITER=GetconfSTR("HEAD", "HEAD_WRITER")
+VARIABLE_CONF_INIFILEVER=GetconfINT("HEAD", "HEAD_VERSION")
+if int(VARIABLE_CONF_INIFILEVER) != 1 {dialog "ISConfig.ini is unknown Version or can't load.\nISConfig.iniが破損しているか、無効なバージョンです。削除してください。":end}
+VARIABLE_CONF_INIFILELANGUAGE=GetconfSTR("HEAD", "HEAD_LANGUAGE")
+VARIABLE_CONF_INIFILEBUILD=GetconfSTR("HEAD", "HEAD_BUILD")
+
+VARIABLE_CONF_WINDOW_POS_X=GetconfINT("REG", "REG_WINDOW1")
+VARIABLE_CONF_WINDOW_POS_Y=GetconfINT("REG", "REG_WINDOW2")
+VARIABLE_CONF_WINDOW_POS_3=GetconfINT("REG", "REG_WINDOWPOS1")
+VARIABLE_CONF_WINDOW_POS_4=GetconfINT("REG", "REG_WINDOWPOS2")
+if VARIABLE_CONF_WINDOW_POS_3 = "" {VARIABLE_CONF_WINDOW_POS_3=(ginfo(20) - ginfo(10)) / 2}
+if VARIABLE_CONF_WINDOW_POS_4 = "" {VARIABLE_CONF_WINDOW_POS_4=(ginfo(21) - ginfo(11)) / 2}
+
+VARIABLE_CONF_WINDOW_COLOR=GetconfINT("REG", "REG_DarkMode")
+VARIABLE_CONF_ANIMATION=GetconfINT("REG", "REG_CLOSEANIMATION")
+VARIABLE_CONF_ISCRIPTENABLE=GetconfINT("REG", "REG_ISCRIPTENABLE")
+
+VARIABLE_CONF_URL_FIRST=GetconfSTR("URLs", "URL_FIRST")
+VARIABLE_CONF_URL_SEARCH=GetconfSTR("URLs", "URL_SEARCH")
+VARIABLE_CONF_TEXT_ATENE_SEARCH=GetconfSTR("URLs", "URL_SEARCH")
+VARIABLE_CONF_URL_BROWSERUPDATE=GetconfSTR("URLs", "URL_GETUPDATE")
+VARIABLE_CONF_URL_TRANSLATE=GetconfSTR("URLs", "URL_TRANSLATE")
+VARIABLE_CONF_URL_REPORT=GetconfSTR("URLs", "URL_REPORT")
+
+VARIABLE_CONF_TEXT_SENDBACK=GetconfSTR("Passage", "PASSAGE_SENDBACK")
+VARIABLE_CONF_TEXT_SENDFORWARD=GetconfSTR("Passage", "PASSAGE_SENDFORWARD")
+VARIABLE_CONF_TEXT_SENDRELOAD=GetconfSTR("Passage", "PASSAGE_SENDRELOAD")
+VARIABLE_CONF_TEXT_NAVIGATE=GetconfSTR("Passage", "PASSAGE_NAVIGATE")
+VARIABLE_CONF_TEXT_NEWTAB=GetconfSTR("Passage", "PASSAGE_NEWTAB")
+VARIABLE_CONF_TEXT_CLONETAB=GetconfSTR("Passage", "PASSAGE_CLONETAB")
+VARIABLE_CONF_TEXT_DELETETAB=GetconfSTR("Passage", "PASSAGE_DELETETAB")
+VARIABLE_CONF_TEXT_CAPUTURE=GetconfSTR("Passage", "PASSAGE_CAPUTURE")
+VARIABLE_CONF_TEXT_ISABOUT=GetconfSTR("Passage", "PASSAGE_ISABOUT")
+VARIABLE_CONF_TEXT_LOCAL=GetconfSTR("Passage", "PASSAGE_LOCAL")
+VARIABLE_CONF_TEXT_ATENE_NAME=GetconfSTR("Passage", "PASSAGE_MANAPADNAME")
+VARIABLE_CONF_TEXT_DOWNLOADS=GetconfSTR("Passage", "PASSAGE_DOWNLOADS")
+VARIABLE_CONF_TEXT_CLOSE=GetconfSTR("Passage", "PASSAGE_CLOSE")
+VARIABLE_CONF_TEXT_INICONFIG=GetconfSTR("Passage", "PASSAGE_INICONFIG")
+VARIABLE_CONF_TEXT_ATENE_URL=GetconfSTR("Passage", "PASSAGE_MOVEURL")
+VARIABLE_CONF_TEXT_ATENE_CLOSE=GetconfSTR("Passage", "PASSAGE_MANACLOSE")
+VARIABLE_CONF_TEXT_UPDATE=GetconfSTR("Passage", "PASSAGE_UPDATE")
+VARIABLE_CONF_TEXT_HISTORY=GetconfSTR("Passage", "PASSAGE_TRACK")
+VARIABLE_CONF_TEXT_FUNCTION=GetconfSTR("Passage", "PASSAGE_FUNCTION1")
+VARIABLE_CONF_TEXT_FUNCTION_NAME=GetconfSTR("Passage", "PASSAGE_FUNCTIONTITLE")
+VARIABLE_CONF_TEXT_ATENE_GOURL=GetconfSTR("Passage", "PASSAGE_MOVEURL")
+VARIABLE_CONF_TEXT_ATENE_SEARCH=GetconfSTR("Passage", "PASSAGE_SEARCHURL")
+VARIABLE_CONF_TEXT_SEARCH=GetconfSTR("Passage", "PASSAGE_SEARCHTEXT")
+VARIABLE_CONF_TEXT_TRANSLATE=GetconfSTR("Passage", "PASSAGE_TRANSLATE")
+return
+
+*ISWindowExit
+gsel 0
+
+title "Close [1/2] - Popup/Stbar/MultiTab"
+DestroyMenu hMenu.0
+if ( IsWindowVisible(hWnd6) ){SetWindowPos hWnd6, 0, 0, 0, 0, 0, 0x83}
+if scr8="use" {scr8="":gsel 8,-1}
+if ChangeUAWindow!="un" {gsel 7,-1}
+if funcmanager = "already" {gsel 5,-1}
+if ver_about = "use" {gsel 4,-1}
+if mana = "already" {gsel 3,-1}
+
+gsel 0,-1
+title "Close [2/2] - Tab Cleaning"
+iswindow_exitcode="true"
+
+sendmsg hTab, TCM_GETITEMCOUNT, 0, 0
+	repeat stat
+		iTab = cnt : gosub *TAB_DEL
+	loop
+
+WebView2_Release pEnv
+
+if VARIABLE_CONF_ANIMATION = 1 {
+sendmsg hwnd, $112, $F020
+wait 50
+await 50
+}
+title "Please exit from taskmgr"
+end
+end
+end

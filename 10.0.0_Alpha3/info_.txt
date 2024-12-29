@@ -1,0 +1,10 @@
+	_FILEVERSION=
+	_PRODUCTVERSION=
+	Comments=Made by ABATBeliever
+	CompanyName= 
+	FileDescription=WebView Browser Built With HSP
+	FileVersion=Release0
+	InternalName=WebView_Alpha3
+	LegalCopyright=ABATBeliever
+	OriginalFilename=InternetStroller_WebView_Alpha3
+	ProductName=InternetStroller WebView Alpha3
