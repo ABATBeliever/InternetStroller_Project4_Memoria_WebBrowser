@@ -1,0 +1,25 @@
+//HSC(hspinet‚Ì’ÊM)
+	#deffunc HSPSelfConnect_init
+		netinit
+		if stat : HotSelfConnectEnable=1
+	return
+	
+	#defcfunc getData str _p1
+		if HotSelfConnectEnable=1{return "HSC-getData‚ÉŽ¸”s‚µ‚Ü‚µ‚½[‰Šú‰»Ž¸”s]"}
+		neturl _p1
+		netrequest_get ""
+		dim res
+		repeat
+			netexec res
+			if res != ""{
+				if res > 0 {
+					sdim buf, netgetv_size() //netgetv_requestsize()
+					netgetv_data buf
+					break
+				}
+				if res < 0 : neterror estr : return "HSC-getData‚ÉŽ¸”s‚µ‚Ü‚µ‚½[–³Œø‚È‰ž“š]\n"+estr
+			}
+			await 50
+			if cnt=1000 : return "HSC-getData‚ÉŽ¸”s‚µ‚Ü‚µ‚½[ƒ^ƒCƒ€ƒAƒEƒg]"
+		loop
+	return buf
