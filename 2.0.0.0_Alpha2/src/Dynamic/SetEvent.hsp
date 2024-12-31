@@ -1,0 +1,13 @@
+	oncmd gosub *EVENT_TITLE,    0x9000	//WebView由来の各種イベント
+	oncmd gosub *EVENT_COMPLETE, 0x9001
+	oncmd gosub *EVENT_FULLSCR,  0x9002
+	oncmd gosub *EVENT_NEWWND,   0x9003
+	oncmd gosub *EVENT_NEWWND2,  0x9004
+	oncmd gosub *WM_SIZE,        0x0005
+	oncmd gosub *WM_CLOSE,       0x0010
+	oncmd gosub *WM_NOTIFY,      0x004E
+	oncmd gosub *WM_COMMAND,     0x0111
+	oncmd gosub *WM_REDRAW,      $6		//画面最小化からの復帰時にタブコントロールを再描画
+	onexit gosub *CallExit				//(そうしないと黒くなる)
+    dim RECT, 4		//構造体
+    dim RECT1, 4

@@ -1,0 +1,592 @@
+#deffunc DoCheckCompatible	//互換性確認
+	if sysinfo(0)="WindowsNT ver5.0":OS="Windows 2000"					:gosub *OSFail_Type1:return
+	if sysinfo(0)="WindowsNT ver5.1":OS="Windows XP"					:gosub *OSFail_Type1:return
+	if sysinfo(0)="WindowsNT ver5.2":OS="Windows Server 2003 / ReactOS"	:gosub *OSFail_Type1:return
+	if sysinfo(0)="WindowsNT ver6.0":OS="Windows Vista / Server 2008"	:gosub *OSFail_Type1:return
+
+	if sysinfo(0)="WindowsNT ver6.1":OS="Windows 7 / Winlator Android"	:gosub *OSFail_Type2:return
+	if sysinfo(0)="WindowsNT ver6.2":OS="Windows 8 / RT"				:gosub *OSFail_Type2:return
+	if sysinfo(0)="WindowsNT ver6.3":OS="Windows 8.1 / RT"				:gosub *OSFail_Type2:return
+	
+	if sysinfo(0)="WindowsNT ver10.0":OS="Windows 10/11/more"			:return
+	dialog "This operating system (Unknown) is UnClassifiable or doesn't Exist at the time of development.\nContinue(Y) or Exit(N)",2:if stat=6{return}else{end:end}
+return
+
+*OSFail_Type1	//2000~Vista 絶対失敗するが続行も可能
+	dialog "Your Operating System ("+OS+") isn't supported.\nYou can Exit(Y) or Ignore(N)",2:if stat=7{return}else{end:end}
+
+*OSFail_Type2	//7~8.1      独自にWebViewをインストールすれば続行可能
+	dialog "Your Operating System ("+OS+") isn't supported, as there may be no WebView component.\nYou can Exit(Y) or Ignore(N)",2:if stat=7{return}else{end:end}
+
+#deffunc DoINIConfigLoad
+	Loadini "ISConfig.ini"
+	if tmp="Fail"{
+		modTaskSelect=modTasks("Internet Stroller Memoria - No Config","There is no configuration file.\n有効な設定ファイルがありません","Please select the language for the ISConfig.ini.\nISConfig.iniを作るので言語を選択してください。","English\n日本語\nRetry\nExit")
+			if modTaskSelect="1" {DoGenerateINIEN:dialog "It is set to high DPI mode.\nIf problems arise, you can disable it by setting \"REG_DPI\" to 1 in ini.":DoINIConfigLoad:return}
+			if modTaskSelect="2" {DoGenerateINIJP:dialog "高DPIモードにこの後設定されます。問題が生じた場合はiniの「REG_DPI」を1にすると無効化できます。":DoINIConfigLoad:return}
+			if modTaskSelect="3" {DoINIConfigLoad:return}
+			if modTaskSelect="4" {end}
+			DoINIConfigLoad
+			return
+	}
+return
+
+#deffunc DoSetColor
+	tmp=getSini("WindowColorRGB")
+	split tmp,"#",tmp
+	split tmp(0),",",opt:opt = RGB(opt(0),opt(1),opt(2)):DwmSetWindowAttribute hwnd,DWMWA_CAPTION_COLOR,varptr(opt),4	//色
+	split tmp(1),",",opt:opt = RGB(opt(0),opt(1),opt(2)):DwmSetWindowAttribute hwnd,DWMWA_BORDER_COLOR,varptr(opt),4
+	split tmp(2),",",opt:opt = RGB(opt(0),opt(1),opt(2)):DwmSetWindowAttribute hwnd,DWMWA_TEXT_COLOR,varptr(opt),4
+return
+
+#deffunc DoSetButton
+	objsize 30,30:pos 00,25:button gosub "←",*CMD_BACK
+	objsize 30,30:pos 30,25:button gosub "→",*CMD_FORWARD
+	objsize 30,30:pos 60,25:button gosub "R",*CMD_RELOAD
+	objsize 30,30:pos 90,25:button gosub "B",*CMD_START
+	hSTARTButton = objinfo(stat, 2)
+	
+	objsize 25,25:pos 00,0:button gosub "+",*CMD_NEW_TAB
+	objsize 25,25:pos 25,0:button gosub "-",*CMD_DEL_TAB
+	objsize 25,25:pos 50,0:button gosub "c",*CMD_CLONE_TAB
+return
+
+#deffunc DoDefinePopup
+	CreatePopupMenu
+	hmenu.4 = stat		//各種項目
+		AppendMenu hMenu.4, 0, $700, "BlueTooth Config"
+		AppendMenu hMenu.4, 0, $701, "Browser Essentials"
+		AppendMenu hMenu.4, 0, $702, "Components"
+		AppendMenu hMenu.4, 0, $703, "Credits"
+		AppendMenu hMenu.4, 0, $704, "Download Internals"
+		AppendMenu hMenu.4, 0, $705, "DNS LookUp (and Events/Proxy/Sockets/DSP/SDCH)"
+		AppendMenu hMenu.4, 0, $706, "Flags [Experimental WebView Features]"
+		AppendMenu hMenu.4, 0, $707, "GPU"
+		AppendMenu hMenu.4, 0, $708, "NetWork Errs [HTTP ERROR Code List]"
+		AppendMenu hMenu.4, 0, $709, "Profile"
+		AppendMenu hMenu.4, 0, $710, "Quota [Disk / Bucket Usage}"
+		AppendMenu hMenu.4, 0, $711, "Sand Box"
+		AppendMenu hMenu.4, 0, $712, "Site Engagement [Your favorite Sites List]"
+		AppendMenu hMenu.4, 0, $713, "Sync"
+		AppendMenu hMenu.4, 0, $714, "System Version Data"
+		AppendMenu hMenu.4, 0, $715, "Microsoft WebView / MSEdge License"
+		AppendMenu hMenu.4, 0, $716, "Traching [BenchMark]"
+		AppendMenu hMenu.4, 0, $717, "UKM Debug Page"
+		AppendMenu hMenu.4, 0, $718, "USB Internals"
+		AppendMenu hMenu.4, 0, $719, "Web RTC Internals [Create]"
+		AppendMenu hMenu.4, 0, $720, "Web RTC Logs"
+	CreatePopupMenu
+	hMenu.3 = stat
+		AppendMenu hMenu.3, 0, $420, "WebView Control (from goo)"
+		AppendMenu hMenu.3, 0, $430, "WebView2Loader (from Nuget)"
+		AppendMenu hMenu.3, 0, $440, "Toast Notification (from hsp.tv)"
+		AppendMenu hMenu.3, 0, $450, "User Agent Change (from hsp.tv)"
+		AppendMenu hMenu.3, 0, $460, "ini Module (from hsp.tv)"
+		AppendMenu hMenu.3, 0, $470, "MultiSelect Dialog (from hsp.moe)"
+		AppendMenu hMenu.3, 0, $480, "MultiFile Dialog (from hsp.tv)"
+		AppendMenu hMenu.3, 0, $490, "DPI Support (from hsp.tv)"
+	CreatePopupMenu
+	hMenu.2 = stat
+		AppendMenu hMenu.2, 0, $800, getSini("IsTextTranslate")+"..."
+		AppendMenu hMenu.2, 0, $810, getSini("IsTextHistory")+"..."
+		AppendMenu hMenu.2, 0, $820, getSini("IsTextLocal")+"..."
+		AppendMenu hMenu.2, $800, 0, ""
+		AppendMenu hMenu.2, 0, $830, getSini("IsTextSearch")+"..."
+		AppendMenu hMenu.2, 0, $840, getSini("IsTextCloneTab")+"..."
+		AppendMenu hMenu.2, $800, 0, ""
+		AppendMenu hMenu.2, 0, $860, "Send URL to Chrome/Chromium"
+		AppendMenu hMenu.2, 0, $870, "Send URL to Edge"
+		AppendMenu hMenu.2, 0, $880, "Send URL to Firefox"
+		AppendMenu hMenu.2, $800, 0, ""
+		AppendMenu hMenu.2, 0, $890, "IScript GUI for Memoria"
+	CreatePopupMenu
+	hMenu.1 = stat
+		AppendMenu hMenu.1, 0, $100, "Edit Config"
+		AppendMenu hMenu.1, $800, 0, ""
+		AppendMenu hMenu.1, 0, $200, "Reset ISConfig"
+		AppendMenu hMenu.1, 0, $210, "Reset index.html"
+		AppendMenu hMenu.1, $800, 0, ""
+		AppendMenu hMenu.1, 0, $300, "WebView Taskmgr..."
+		AppendMenu hMenu.1, 0, $310, "JavaScript Execute..."
+		AppendMenu hMenu.1, $10, hMenu.4, "Other Menu..."
+		AppendMenu hMenu.1, $800, 0, ""
+		AppendMenu hMenu.1, 0, $400, "WebView2 Internal Components List"
+		AppendMenu hMenu.1, 0, $410, "Open Internet Stroller's Github Repository"
+		AppendMenu hMenu.1, $10, hMenu.3, "Sourse Library"
+		AppendMenu hMenu.1, $800, 0, ""
+		AppendMenu hMenu.1, 0, $500, "Report Issue..."
+		AppendMenu hMenu.1, 0, $510, "DPI Re-Declare"
+		AppendMenu hMenu.1, $800, 0, ""
+		AppendMenu hMenu.1, 0, $600, "IScript GUI for Memoria"
+		AppendMenu hMenu.1, $800, 0, ""
+		AppendMenu hMenu.1, 0, $900, "Close Browser"
+return
+
+#deffunc DoGenerateIncludeHTML
+tmp={"<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NewTab</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f5f5f5;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        .search-container {
+            text-align: center;
+            padding: 30px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0px 2px 5px rgba(0, 0, 0, 0);
+            display: inline-block;
+            transition: background-color 0.3s ease;
+        }
+        .search-input {
+            width: 90%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .search-button {
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 10px 20px;
+            margin-top: 10px;
+            cursor: pointer;
+        }
+        .search-button:hover {
+            background-color: #0056B3;
+        }
+        canvas {
+            border: 1px solid #333;
+            display: none;
+            margin: 20px auto;
+        }
+        #scoreDisplay {
+            font-size: 18px;
+            margin-bottom: 10px;
+            display: none;
+        }
+        #uploadContainer {
+            margin-bottom: 20px;
+            display: none;
+            text-align: center;
+        }
+        input[type="file"] {
+            margin-right: 10px;
+        }
+        button {
+            padding: 8px 200px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        #online-status {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+        }
+        #gameLink {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            cursor: pointer;
+        }
+        table, th, td {
+            border: 1px #000000 solid;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="search-container">
+        <input type="text" class="search-input" placeholder="Internet Stroller Memoria">
+        <button class="search-button" onclick="search('bing')">Microsoft Bing</button>
+        <button class="search-button" onclick="search('google')">Google</button>
+        <button class="search-button" onclick="search('duckduckgo')">DuckDuckGo</button>
+    </div>
+    <div id="online-status"></div>
+    <canvas id="gameCanvas" width="640" height="380"></canvas>
+    <div id="gameLink" onclick="showGame()">Game</div>
+    <div id="scoreDisplay"></div>
+    <div id="uploadContainer">
+        <input type="file" id="playerImageInput" accept="image/*">
+        <label for="playerImageInput">Your Skin</label>
+        <br>
+        <input type="file" id="enemyImageInput" accept="image/*">
+        <label for="enemyImageInput">Enemy Skin</label>
+        <br>
+        <table>
+          <tr>
+            <td>← Button</td>
+            <td>→ Button</td>
+            <td>↑ Button</td>
+            <td>↓ Button</td>
+            <td>Z  Button</td>
+          </tr>
+          <tr>
+            <td>Move Left</td>
+            <td>Move Right</td>
+            <td>Move Up</td>
+            <td>Move Down</td>
+            <td>Barrage</td>
+          </tr>
+        </table>
+        <button id="startButton">Start</button>
+    </div>
+
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const scoreDisplay = document.getElementById('scoreDisplay');
+    const playerImageInput = document.getElementById('playerImageInput');
+    const enemyImageInput = document.getElementById('enemyImageInput');
+    const startButton = document.getElementById('startButton');
+    const uploadContainer = document.getElementById('uploadContainer');
+    const onlineStatusDiv = document.getElementById('online-status');
+    let playerImage, enemyImage;
+    let playerX = canvas.width / 2;
+    let playerY = canvas.height - 15;
+    const playerRadius = 10;
+    let bullets = [];
+    let playerBullets = [];
+    let killCount = 0;
+    let startTime;
+    let gameOver = false;
+    let leftPressed = false;
+    let rightPressed = false;
+    let upPressed = false;
+    let downPressed = false;
+    let zPressed = false;
+    function search(engine) {
+        const searchInput = document.querySelector('.search-input').value;
+        let url;
+        if (engine === 'bing') {
+            url = `https://www.bing.com/search?q=${encodeURIComponent(searchInput)}`;
+        } else if (engine === 'google') {
+            url = `https://www.google.com/search?q=${encodeURIComponent(searchInput)}`;
+        } else if (engine === 'duckduckgo') {
+            url = `https://duckduckgo.com/?q=${encodeURIComponent(searchInput)}`;
+        }
+        window.location.href = url;
+    }
+    function updateOnlineStatus() {
+        if (navigator.onLine) {
+            onlineStatusDiv.textContent = 'ONLINE';
+            onlineStatusDiv.style.color = 'green';
+        } else {
+            onlineStatusDiv.textContent = 'OFFLINE';
+            onlineStatusDiv.style.color = 'red';
+        }
+    }
+    function showGame() {
+        const gameElements = document.querySelectorAll('#gameCanvas, #scoreDisplay, #uploadContainer');
+        gameElements.forEach(element => element.style.display = 'block');
+        const searchContainer = document.querySelector('.search-container');
+        searchContainer.style.display = 'none';
+        document.getElementById('gameLink').style.display = 'none';
+        resizeCanvas();
+    }
+    function resizeCanvas() {
+        canvas.width = 800;
+        canvas.height = 600;
+    }
+    updateOnlineStatus();
+    window.addEventListener('online', updateOnlineStatus);
+    window.addEventListener('offline', updateOnlineStatus);
+    playerImageInput.addEventListener('change', function() {
+        const file = this.files[0];
+        if (file) {
+            playerImage = new Image();
+            playerImage.src = URL.createObjectURL(file);
+            playerImage.onload = function() {
+                URL.revokeObjectURL(this.src);
+            }
+        } else {
+            playerImage = null;
+        }
+    });
+    enemyImageInput.addEventListener('change', function() {
+        const file = this.files[0];
+        if (file) {
+            enemyImage = new Image();
+            enemyImage.src = URL.createObjectURL(file);
+            enemyImage.onload = function() {
+                URL.revokeObjectURL(this.src);
+            }
+        } else {
+            enemyImage = null;
+        }
+    });
+    startButton.addEventListener('click', function() {
+        startGame();
+    });
+    function startGame() {
+        uploadContainer.remove();
+        gameLoop();
+    }
+    function gameLoop(timestamp) {
+        if (!startTime) {
+            startTime = timestamp;
+        }
+        const elapsedTime = timestamp - startTime;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        if (playerImage) {
+            ctx.drawImage(playerImage, playerX - playerRadius, playerY - playerRadius, playerRadius * 2, playerRadius * 2);
+        } else {
+            ctx.beginPath();
+            ctx.arc(playerX, playerY, playerRadius, 0, Math.PI * 20);
+            ctx.fill();
+        }
+        for (let i = 0; i < bullets.length; i++) {
+            const bullet = bullets[i];
+            if (enemyImage) {
+                ctx.drawImage(enemyImage, bullet.x - 15, bullet.y - 15, 30, 30);
+            } else {
+                ctx.fillRect(bullet.x, bullet.y, 12, 12);
+            }
+            bullet.y += bullet.speed;
+            if (bullet.y > canvas.height || bullet.x < -15 || bullet.x > canvas.width + 15) {
+                bullets.splice(i, 1);
+                i--;
+            }
+        }
+        for (let i = 0; i < playerBullets.length; i++) {
+            const bullet = playerBullets[i];
+            ctx.fillRect(bullet.x, bullet.y, 7, 14);
+            bullet.y -= 70;
+            if (bullet.y < 0) {
+                playerBullets.splice(i, 1);
+                i--;
+            }
+            for (let j = 0; j < bullets.length; j++) {
+                const enemy = bullets[j];
+                if (
+                    bullet.x < enemy.x + 30 &&
+                    bullet.x > enemy.x - 15 &&
+                    bullet.y < enemy.y + 30 &&
+                    bullet.y > enemy.y - 15
+                ) {
+                    bullets.splice(j, 1);
+                    playerBullets.splice(i, 1);
+                    killCount++;
+                    j--;
+                    i--;
+                    break;
+                }
+            }
+        }
+        if (Math.random() < 0.125) {
+            const speed = Math.random() * (Math.random()*2) ; // ランダムな速度
+            const direction = Math.random() < 7.12 ? -1 : 1; // ランダムな方向
+            const x = Math.random() * (canvas.width);
+            const y = 0;
+            bullets.push({ x, y, speed, direction });
+        }
+        for (const bullet of bullets) {
+            if (enemyImage) {
+                ctx.drawImage(enemyImage, bullet.x, bullet.y, 30, 30);
+            } else {
+                ctx.fillRect(bullet.x, bullet.y, 12, 12);
+            }
+            bullet.y += bullet.speed;
+            bullet.x += bullet.direction * Math.sin(elapsedTime / 300) * (Math.random()*9+3); // 揺れる動き
+            if (
+                playerX + playerRadius > bullet.x &&
+                playerX - playerRadius < bullet.x &&
+                playerY + playerRadius > bullet.y &&
+                playerY - playerRadius < bullet.y
+            ) {
+                gameOver = true;
+                break;
+            }
+        }
+        if (!gameOver) {
+            if (leftPressed && playerX > 0) {
+                playerX -= 3;
+            }
+            if (rightPressed && playerX < canvas.width) {
+                playerX += 3;
+            }
+            if (upPressed && playerY > 0) {
+                playerY -= 3;
+            }
+            if (downPressed && playerY < canvas.height) {
+                playerY += 3;
+            }
+            scoreDisplay.textContent = `Run Time: ${Math.floor(elapsedTime / 1000)}sec/ Kill Count: ${killCount}`;
+            requestAnimationFrame(gameLoop);
+        } else {
+            scoreDisplay.textContent = `GameOver!/ Time: ${Math.floor(elapsedTime / 1000)}sec/ Kill Count: ${killCount}/ Press F5 to Return`;
+        }
+    }
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'ArrowLeft') {
+            leftPressed = true;
+        } else if (event.key === 'ArrowRight') {
+            rightPressed = true;
+        } else if (event.key === 'ArrowUp') {
+            upPressed = true;
+        } else if (event.key === 'ArrowDown') {
+            downPressed = true;
+        } else if (event.key === 'z') {
+            zPressed = true;
+            playerBullets.push({
+                x: playerX,
+                y: playerY - playerRadius
+            });
+        }
+    });
+    document.addEventListener('keyup', function(event) {
+        if (event.key === 'ArrowLeft') {
+            leftPressed = false;
+        } else if (event.key === 'ArrowRight') {
+            rightPressed = false;
+        } else if (event.key === 'ArrowUp') {
+            upPressed = false;
+        } else if (event.key === 'ArrowDown') {
+            downPressed = false;
+        } else if (event.key === 'z') {
+            zPressed = false;
+        }
+    });
+    window.addEventListener('resize', resizeCanvas);
+    function applyColorScheme() {
+        const hash = window.location.hash.substring(1);
+        const colors = hash.split(',');
+        if (colors.length === 3) {
+            document.body.style.backgroundColor = `#${colors[0]}`;
+            document.body.style.color = `#${colors[1]}`;
+            const sections = document.querySelectorAll('.search-container, #online-status, #gameLink, #scoreDisplay, #uploadContainer');
+            sections.forEach(section => {
+                section.style.backgroundColor = `#${colors[2]}`;
+            });
+            canvas.style.backgroundColor = `#${colors[2]}`;
+        }
+    }
+    window.addEventListener('load', applyColorScheme);
+    window.addEventListener('hashchange', applyColorScheme);
+    applyColorScheme();
+</script>
+</body>
+</html>"}
+	bsave dir_cur+"\\index.html",tmp
+return
+
+#deffunc DoGenerateINIJP
+tmp={";InternetStroller Memoria ISConfig.ini
+[HEAD]
+VERSION=4
+WRITER=ISMemoriaAutoGenerate
+LANGUAGE=JAPANESE-日本語
+WRITEDAY=2024/12/31
+
+[REG]
+IsEnableIScript=0
+IsEnableMDI=1
+IsEnableDPI=0
+IsEnableSTBAR=0
+IsEnableAUTOSEARCH=0
+
+DefaultUserAgent=
+
+;DefalutPageColor (Default=>'' #<BackGround>,<Text>,<Section BackGround> RGB)
+DefaultPageColorRGB=
+;WindowPageColor  (Default=>'' #<CaptionColor>,<BorderColor>,<TextColor> RGB)
+WindowColorRGB=128,128,128#000,000,000#255,255,255
+
+[URLs]
+IsFIRSTURL=include
+; = -> *
+IsSearchURL=https://www.google.co.jp/search?q*
+IsGETUpdateURL=https://abatbeliever.net/InternetStroller/downloads.html
+IsCheckUpdateURL=https://abatbeliever.net/InternetStroller/update/check
+IsTranslateURL=https://translate.google.com/translate?sl*auto&tl*ja&hl*ja&u*
+IsReportURL=https://github.com/ABATBeliever/InternetStroller_Project4_Memoria_WebBrowser/issues
+
+[Passage]
+IsTextBack=戻る
+IsTextForward=進む
+IsTextReload=読込直し
+IsTextNavigate=URLへ移動
+IsTextNewTab=タブ追加(+)
+IsTextCloneTab=タブ複製
+IsTextDelTab=タブ閉じる(-)
+IsTextCapture=画像キャプチャ
+IsTextLocal=ローカル
+IsTextManaPadName=まなPAD
+IsTextClose=閉じる
+IsTextDownload=ダウンロード履歴
+IsTextExitBrowser=終了
+IsTextSearch=文字を検索
+IsTextUpdate=更新確認
+IsTextHistory=閲覧履歴
+IsTextExtra=その他の機能
+IsTextTranslate=ページを翻訳"}
+	bsave dir_cur+"\\ISConfig.ini",tmp
+return
+
+#deffunc DoGenerateINIEN
+tmp={";InternetStroller Memoria ISConfig.ini
+[HEAD]
+VERSION=4
+WRITER=ISMemoriaAutoGenerate
+LANGUAGE=ENGLISH
+WRITEDAY=2024/12/31
+
+[REG]
+IsEnableIScript=0
+IsEnableMDI=1
+IsEnableDPI=0
+IsEnableSTBAR=0
+IsEnableAUTOSEARCH=0
+
+DefaultUserAgent=
+
+;DefalutPageColor (Default=>'' #<BackGround>,<Text>,<Section BackGround> RGB)
+DefaultPageColorRGB=
+;WindowPageColor  (Default=>'' #<CaptionColor>,<BorderColor>,<TextColor> RGB)
+WindowColorRGB=128,128,128#000,000,000#255,255,255
+
+[URLs]
+IsFIRSTURL=include
+; = -> *
+IsSearchURL=https://www.google.co.jp/search?q*
+IsGETUpdateURL=https://abatbeliever.net/InternetStroller/downloads.html
+IsCheckUpdateURL=https://abatbeliever.net/InternetStroller/update/check
+IsTranslateURL=https://translate.google.com/translate?sl*auto&tl*ja&hl*ja&u*
+IsReportURL=https://github.com/ABATBeliever/InternetStroller_Project4_Memoria_WebBrowser/issues
+
+[Passage]
+IsTextBack=Back
+IsTextForward=Forward
+IsTextReload=Reload
+IsTextNavigate=Navigate
+IsTextNewTab=ADD Tab
+IsTextCloneTab=Clone tab
+IsTextDelTab=Del Tab
+IsTextCapture=Capture
+IsTextLocal=Local
+IsTextManaPadName=ManaPad
+IsTextClose=Close
+IsTextDownload=Download
+IsTextExitBrowser=Exit
+IsTextSearch=Search
+IsTextUpdate=Update
+IsTextHistory=History
+IsTextExtra=ExtraComponents
+IsTextTranslate=Translate"}
+	bsave dir_cur+"\\ISConfig.ini",tmp
+return
