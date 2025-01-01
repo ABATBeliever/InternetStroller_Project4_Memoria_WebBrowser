@@ -1,0 +1,41 @@
+;https://hsp.tv/play/pforum.php?mode=all&num=101616
+#module
+	#const max_chr 65535
+	#deffunc dialog16Multi array arr
+		c_dir=dir_cur
+		dim ofn,22:sdim strfile,max_chr*2
+		ofn=88,hwnd,hinstance,0,0,0,0,varptr(strfile),max_chr,0,0,0,0,0x10080A04
+		GetOpenFileNameW varptr(ofn) : res=stat
+		chdir c_dir
+		if res=0 : return 0
+		flag=0 : items=0
+		repeat max_chr	//ƒAƒCƒeƒ€”‚ğ”‚¦‚é
+			if wpeek(strfile,cnt*2) {
+				flag=0
+			} else {
+				if flag : break
+				flag=1
+				items++
+			}
+		loop
+		if items=0 : return 0
+		sdim arr,64,items
+		item_pos=0 : start=0 : cou=0 : flag=0
+		repeat max_chr
+			if wpeek(strfile,cnt*2) {
+				if flag : start=cnt : cou=0 : item_pos++
+				flag=0
+				cou++
+			} else {
+				if flag : break
+				flag=1
+				if cou {
+					sdim buf,cou*2+2
+					memcpy buf,strfile,cou*2,0,start*2
+					arr(item_pos)=cnvwtos(buf)
+				}
+			}
+		loop
+		dim strfile
+	return items
+#global
