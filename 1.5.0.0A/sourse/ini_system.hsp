@@ -1,0 +1,1539 @@
+// InternetStroller Memoria iniSystem.hsp
+// from https://dev.onionsoft.net/seed/info.ax?id=2367
+// Made by 木製ナット
+// include only
+;============================================================
+; ini編集モジュール
+;============================================================
+/*
+%dll
+ini_system
+
+%ver
+1.1.0
+
+%date
+2023/10/12
+
+%author
+木製ナット
+
+%note
+ini_system.hsp をインクルードする。
+標準命令のメモリノートパッド(notesel)を基本にしたモジュールになります。
+
+%type
+ユーザー拡張命令
+
+%port
+3.6
+
+%*/
+;------------------------------------------------------------
+
+#ifndef ini_set
+#module "ini_module_system_m"
+
+
+
+;===========================================================
+/*
+%index
+ini_set
+iniを初期化
+
+%prm
+p1 , p2
+p1=1～(1024) : 初期化サイズ
+p2=1～(64) : 最大セクション数
+
+%inst
+iniを初期化します。
+
+p1はiniを読み込むために確保するバッファサイズになります。
+省略した場合、1024[Byte]が指定されます。
+
+p2は作成・読込みできるセクション数の最大値になります。
+省略した場合、64が指定されます。
+
+ini_systemで追加されるini_file_section_cntを除いた全ての命令・関数の実行前に必ず1度以上呼出してください。
+ini_file_section_cntのみini_setを実行する前に呼び出すことが可能です。
+
+%sample
+#include "ini_system.hsp"
+
+#define load_file_name	(dir_desktop + "\\config.ini")
+
+*main
+	//ini初期化しiniファイルを読込み
+	ini_set
+	ini_load load_file_name
+
+	tmp = 1
+
+	if stat{
+		//iniファイルを読み込めなかった場合、iniパラメータ追加
+		ini_add "Pr" , tmp
+	}else{
+		//iniパラメータ読出し
+		ini_get "Pr" , tmp
+	}
+
+	mes tmp
+
+	//変数内容変更
+	tmp ++
+
+	//iniパラメータ上書き
+	ini_update "Pr" , tmp
+
+	//iniファイルをデスクトップに保存
+	ini_save load_file_name
+
+stop
+
+%href
+ini_load
+ini_save
+ini_file_section_cnt
+
+%group
+iniファイル制御
+
+%*/
+;------------------------------------------------------------
+#define global ini_set(%1 = 1024 , %2 = 64) deffunc_ini_set %1 , %2
+#deffunc deffunc_ini_set int p1 , int p2
+
+	ini_ret = 1
+	ini_set_complete = 0
+	ini_set_section_max = 0
+
+	if p1 > 0{
+		sdim ini_data , p1 , p2
+		sdim ini_section_name , 64 , p2
+		sdim ini_str_tmp , 64
+		dim ini_parameter_cnt , p2
+		dim ini_comment_cnt , p2
+		ini_ret = 0
+		ini_index = -1
+		ini_section_cnt = 1
+		ini_section_select = 0
+		ini_section_name(0) = "Main"
+		ini_section_max = p2
+		ini_set_complete = p1
+	}
+
+return ini_ret
+
+
+
+;===========================================================
+/*
+%index
+ini_load
+iniを読み込み
+
+%prm
+p1
+p1=文字列("config.ini") : 読み込むファイル名
+
+%inst
+iniをファイルから読み込みます。
+読み込みが失敗した場合、statに1が返ります。
+
+p1を省略した場合、"config.ini"が指定されます。
+
+%href
+ini_set
+ini_save
+ini_file_section_cnt
+
+%group
+iniファイル制御
+
+%*/
+;------------------------------------------------------------
+#define global ini_load(%1 = "config.ini") deffunc_ini_load %1
+#deffunc deffunc_ini_load str p1
+
+	if ini_set_complete = 0 : ini_set
+
+	ini_ret = 1
+	ini_space_tmp_switch = 0
+
+	if strlen(p1) > 0{
+		exist p1
+
+		if strsize > 0{
+			sdim ini_file_data_tmp , strsize
+
+			notesel ini_file_data_tmp
+			noteload p1
+
+			ini_notemax_tmp = notemax
+			ini_section_cnt = 1
+			ini_index = 0
+			ini_section_name(0) = "Main"
+
+			noteunsel
+
+			notesel ini_data(0)
+
+			repeat ini_notemax_tmp
+				getstr ini_str_tmp , ini_file_data_tmp , ini_index
+				ini_index += strsize
+
+				if strmid(ini_str_tmp , 0 , 1) = "[" & strmid(ini_str_tmp , strlen(ini_str_tmp) - 1 , 1) = "]"{
+					if ini_space_tmp_switch : notedel notemax - 1
+					ini_section_name(ini_section_cnt) = strmid(ini_str_tmp , 1 , strlen(ini_str_tmp) - 2)
+
+					noteunsel
+					notesel ini_data(ini_section_cnt)
+
+					ini_section_cnt ++
+				}else{
+					if ini_str_tmp != ""{
+						ini_space_tmp_switch = 0
+
+						if strmid(ini_str_tmp , 0 , 1) = ";"{
+							ini_comment_cnt(ini_section_cnt) ++
+						}else{
+							ini_parameter_cnt(ini_section_cnt) ++
+						}
+					}else{
+						ini_space_tmp_switch = 1
+					}
+
+					noteadd ini_str_tmp
+				}
+			loop
+
+			noteunsel
+
+			ini_ret = 0
+			ini_index = -1
+		}
+	}
+
+return ini_ret
+
+
+
+;===========================================================
+/*
+%index
+ini_save
+iniを保存
+
+%prm
+p1 , p2
+p1=文字列("config.ini") : 保存先ファイル名
+p2=0,1(0) : セクション間空行挿入選択
+
+%inst
+iniをファイルに保存します。
+保存が失敗した場合、statに1が返ります。
+
+p1を省略した場合、"config.ini"が指定されます。
+
+p2に1を指定した場合、保存時にセクションとセクションの間に空行を挿入します。
+p2を省略及び0を指定した場合は挿入されません。
+
+%href
+ini_set
+ini_load
+ini_file_section_cnt
+
+%group
+iniファイル制御
+
+%*/
+;------------------------------------------------------------
+#define global ini_save(%1 = "config.ini" , %2 = 0) deffunc_ini_save %1 , %2
+#deffunc deffunc_ini_save str p1 , int p2
+
+	if ini_set_complete = 0 : ini_set
+
+	ini_ret = 1
+	ini_space_tmp_switch = 0
+
+	if strlen(p1) > 0{
+		sdim ini_file_data_tmp , ini_set_complete * ini_section_max
+
+		notesel ini_file_data_tmp
+
+		repeat ini_section_cnt
+
+			notesel ini_data(cnt)
+
+			ini_notemax_tmp = notemax
+			ini_index = 0
+			ini_save_section_sel = cnt
+
+			noteunsel
+
+			if cnt > 0{
+				if ini_space_tmp_switch & p2 : noteadd ""
+				noteadd "[" + ini_section_name(cnt) + "]"
+			}
+
+			repeat ini_notemax_tmp
+				getstr ini_str_tmp , ini_data(ini_save_section_sel) , ini_index
+				ini_index += strsize
+
+				noteadd ini_str_tmp
+			loop
+
+			ini_space_tmp_switch = 0
+
+			if ini_str_tmp != "" & p2{
+				ini_space_tmp_switch = 1
+			}
+		loop
+
+		notesave p1
+		noteunsel
+
+		ini_index = -1
+		ini_ret = 0
+	}
+
+return ini_ret
+
+
+
+;===========================================================
+/*
+%index
+ini_file_section_cnt
+iniのセクション数をカウント
+
+%prm
+(p1)
+p1=文字列("config.ini") : 調査ファイル名
+
+%inst
+iniファイルのセクション数を調べます。
+ファイルの調査に失敗した場合、-1が返ります。
+
+p1を省略した場合、"config.ini"が指定されます。
+
+ini_setでセクション数を確保するのにお使いください。
+
+%href
+ini_set
+ini_save
+ini_load
+
+%group
+iniファイル制御
+
+%*/
+;------------------------------------------------------------
+#define global ini_file_section_cnt(%1 = "config.ini") deffunc_ini_file_section_cnt(%1)
+#defcfunc deffunc_ini_file_section_cnt str p1
+
+	ini_ret = -1
+
+	if strlen(p1) > 0{
+		exist p1
+
+		if strsize > 0{
+			sdim ini_file_data_tmp , strsize
+			sdim ini_str_tmp , 64
+
+			notesel ini_file_data_tmp
+			noteload p1
+
+			ini_notemax_tmp = notemax
+			ini_index = 0
+			ini_ret = 1
+
+			noteunsel
+
+			repeat ini_notemax_tmp
+				getstr ini_str_tmp , ini_file_data_tmp , ini_index
+				ini_index += strsize
+
+				if strmid(ini_str_tmp , 0 , 1) = "[" & strmid(ini_str_tmp , strlen(ini_str_tmp) - 1 , 1) = "]"{
+					ini_ret ++
+				}
+			loop
+
+			ini_index = -1
+		}
+	}
+
+return ini_ret
+
+
+
+;===========================================================
+/*
+%index
+ini_section_sel
+iniセクション選択
+
+%prm
+p1
+p1=文字列("Main") : 選択するセクション名
+
+%inst
+iniの操作対象セクションをセクション名で選択します。
+statに選択されたセクションIDが返ります。
+選択に失敗した場合、statに-1が返ります。
+
+p1を省略、もしくは"Main"を指定した場合、メインセクションが選択されます。
+p1に改行記号("\n")を指定することことはできません。
+
+ini_section_sel及びini_section_sel_idを未実行の状態でのini_add等の操作対象セクションはメインセクションになります。
+
+%sample
+#include "ini_system.hsp"
+
+#define load_file_name	(dir_desktop + "\\config.ini")
+
+*main
+	//ini初期化しiniファイルを読込み
+	ini_set
+	ini_load load_file_name
+
+	tmp1 = 0
+	tmp2 = 1
+
+	if stat{
+		//iniファイルを読み込めなかった場合、iniパラメータ追加
+
+		//メインセクションにパラメータ追加
+		ini_section_sel
+		ini_add "Pr" , tmp1
+
+		//セクション1にメインセクションと同じ名称のパラメータを作成
+		ini_section_add "セクション1"
+		ini_section_sel "セクション1"
+		ini_add "Pr" , tmp2
+	}
+
+	//メインセクションのパラメータを読出し
+	ini_section_sel
+	ini_get "Pr" , tmp1
+
+	//セクション1のパラメー読出し
+	ini_section_sel "セクション1"
+	ini_get "Pr" , tmp2
+
+	mes "メインセクション : " + tmp1
+	mes "セクション1 : " + tmp2
+
+	//変数内容変更
+	tmp1 ++
+	tmp2 *= 2
+
+	//メインセクションのパラメータを上書き
+	ini_section_sel
+	ini_update "Pr" , tmp1
+
+	//セクション1のパラメータを上書き
+	ini_section_sel "セクション1"
+	ini_update "Pr" , tmp2
+
+	//iniファイルをデスクトップに保存
+	ini_save load_file_name
+
+stop
+
+%href
+ini_set
+ini_section_sel_id
+
+%group
+iniセクション制御
+
+%*/
+;------------------------------------------------------------
+#define global ini_section_sel(%1 = "Main") deffunc_ini_section_sel %1
+#deffunc deffunc_ini_section_sel str p1
+
+	if ini_set_complete = 0 : ini_set
+
+	ini_ret = -1
+
+	if strlen(p1) > 0{
+		repeat ini_section_cnt
+			if ini_section_name(cnt) = p1{
+				ini_section_select = cnt
+				ini_ret = cnt
+
+				break
+			}
+		loop
+	}
+
+return ini_ret
+
+
+
+;===========================================================
+/*
+%index
+ini_section_sel_id
+iniセクションID選択
+
+%prm
+p1
+p1=0～(0) : 選択するセクションID
+
+%inst
+iniの操作対象セクションをセクションIDで選択します。
+refstrに選択されたセクション名が返ります。
+選択に失敗した場合、refstrに空文字""が返ります。
+
+p1を省略、もしくは0を指定した場合、メインセクションが選択されます。
+p1に改行記号("\n")を指定することことはできません。
+
+%href
+ini_set
+ini_section_sel
+
+%group
+iniセクション制御
+
+%*/
+;------------------------------------------------------------
+#define global ini_section_sel_id(%1 = 0) deffunc_ini_section_sel_id %1
+#deffunc deffunc_ini_section_sel_id int p1
+
+	if ini_set_complete = 0 : ini_set
+
+	ini_str_tmp = ""
+
+	if p1 >= 0 & p1 < ini_section_cnt{
+		ini_section_select = p1
+		ini_str_tmp = ini_section_name(p1)
+	}
+
+return ini_str_tmp
+
+
+
+;===========================================================
+/*
+%index
+ini_section_add
+iniセクション追加
+
+%prm
+p1
+p1=文字列 : 追加するセクション名
+
+%inst
+iniのセクションを追加します。
+statに追加されたセクションIDが返ります。
+追加に失敗した場合、statに-1が返ります。
+
+p1に改行記号("\n")及び"Main"を指定することことはできません。
+また、既に存在するセクション名を指定することはできません。
+
+%href
+ini_set
+ini_section_rename
+ini_section_del
+
+%group
+iniセクション制御
+
+%*/
+;------------------------------------------------------------
+#define global ini_section_add(%1) deffunc_ini_section_add %1
+#deffunc deffunc_ini_section_add str p1
+
+	if ini_set_complete = 0 : ini_set
+
+	ini_ret = -1
+
+	if strlen(p1) > 0 & p1 != "Main" & ini_section_cnt < ini_section_max{
+		ini_ret = ini_section_cnt
+
+		repeat ini_section_cnt
+			if ini_section_name(cnt) = p1{
+				ini_ret = -1
+				break
+			}
+		loop
+
+		if ini_ret = ini_section_cnt{
+			ini_section_name(ini_section_cnt) = p1
+			ini_section_cnt ++
+		}
+	}
+
+return ini_ret
+
+
+
+;===========================================================
+/*
+%index
+ini_section_rename
+iniセクション名変更
+
+%prm
+p1 , p2
+p1=文字列 : 変更前のセクション名
+p2=文字列 : 変更後のセクション名
+
+%inst
+iniのセクション名を変更します。
+statに変更されたセクションIDが返ります。
+変更に失敗した場合、statに-1が返ります。
+
+p1及びp2に改行記号("\n")または"Main"を指定することことはできません。
+また、p2に既に存在するセクション名を指定することはできません。
+
+%href
+ini_set
+ini_section_add
+ini_section_del
+
+%group
+iniセクション制御
+
+%*/
+;------------------------------------------------------------
+#define global ini_section_rename(%1 , %2) deffunc_ini_section_rename %1 , %2
+#deffunc deffunc_ini_section_rename str p1 , str p2
+
+	if ini_set_complete = 0 : ini_set
+
+	ini_ret = -1
+
+	if strlen(p1) > 0 & strlen(p2) > 0 & p1 != "Main" & p2 != "Main"{
+		ini_ret = 0
+
+		repeat ini_section_cnt
+			if ini_section_name(cnt) = p2{
+				ini_ret = -1
+				break
+			}
+		loop
+
+		if ini_ret = 0{
+			ini_ret = -1
+
+			repeat ini_section_cnt
+				if ini_section_name(cnt) = p1{
+					ini_section_name(cnt) = p2
+					ini_ret = cnt
+					break
+				}
+			loop
+		}
+	}
+
+return ini_ret
+
+
+
+;===========================================================
+/*
+%index
+ini_section_del
+iniセクション削除
+
+%prm
+p1
+p1=文字列 : 削除するセクション名
+
+%inst
+iniのセクションを削除します。
+statに削除されたセクションIDが返ります。
+削除に失敗した場合、statに-1が返ります。
+
+p1に改行記号("\n")及び"Main"を指定することことはできません。
+削除されたセクション以降のセクションは、セクションIDが一つシフトします。
+
+%href
+ini_set
+ini_section_add
+ini_section_rename
+
+%group
+iniセクション制御
+
+%*/
+;------------------------------------------------------------
+#define global ini_section_del(%1) deffunc_ini_section_del %1
+#deffunc deffunc_ini_section_del str p1
+
+	if ini_set_complete = 0 : ini_set
+
+	ini_ret = -1
+
+	if strlen(p1) > 0 & p1 != "Main"{
+		ini_ret = -1
+
+		repeat ini_section_cnt
+			if ini_section_name(cnt) = p1{
+				ini_ret = cnt
+			}
+
+			if ini_ret > 0{
+				if cnt + 1 < ini_section_max{
+					ini_section_name(cnt) = ini_section_name(cnt + 1)
+					ini_data(cnt) = ini_data(cnt + 1)
+				}else{
+					ini_section_name(cnt) = ""
+					ini_data(cnt) = ""
+				}
+			}
+		loop
+
+		ini_section_cnt --
+	}
+
+return ini_ret
+
+
+
+;===========================================================
+/*
+%index
+ini_section_get_name
+iniセクション名を取得
+
+%prm
+(p1)
+p1=0～(0) : 名称を取得するセクションID
+
+%inst
+指定したセクションIDのセクション名を取得します。
+p1が範囲外の場合、空文字""が返ります。
+
+p1の範囲は0～ini_section_info_cntまでになります。
+p1を省略及び0を指定した場合、メインセクション名の"Main"が返ります。
+
+%sample
+#include "ini_system.hsp"
+
+#define load_file_name	(dir_desktop + "\\config.ini")
+
+*main
+	//ini初期化しiniファイルを読込み
+	ini_set
+	ini_load load_file_name
+
+	if stat{
+		repeat 10
+			tmp = cnt
+
+			//セクションを追加しパラメータを書き込む
+			ini_section_add "Section" + cnt
+			ini_section_sel "Section" + cnt
+			ini_add "Pr" , tmp
+		loop
+	}
+
+	//全てのセクション名を取得する
+	repeat ini_section_info_cnt
+		mes ini_section_get_name(cnt)
+	loop
+
+	//iniファイルをデスクトップに保存
+	ini_save load_file_name
+
+stop
+
+%href
+ini_set
+ini_section_get_id
+
+%group
+iniセクション情報取得
+
+%*/
+;------------------------------------------------------------
+#define global ctype ini_section_get_name(%1 = 0) defcfunc_ini_section_get_name(%1)
+#defcfunc defcfunc_ini_section_get_name int p1
+
+	if ini_set_complete = 0 : ini_set
+
+	ini_str_tmp = ""
+
+	if p1 >= 0 & p1 < ini_section_cnt{
+		ini_str_tmp = ini_section_name(p1)
+	}
+
+return ini_str_tmp
+
+
+
+;===========================================================
+/*
+%index
+ini_section_get_id
+iniセクションIDを取得
+
+%prm
+(p1)
+p1=文字列("Main") : IDを取得するセクション名
+
+%inst
+指定したセクション名のセクションIDを取得します。
+p1のセクション名をを持つセクションが存在しない場合、-1が返ります。
+
+p1を省略及び"Main"を指定した場合、メインセクションIDの0が返ります。
+
+%href
+ini_set
+ini_section_get_name
+
+%group
+iniセクション情報取得
+
+%*/
+;------------------------------------------------------------
+#define global ctype ini_section_get_id(%1 = "Main") defcfunc_ini_section_get_id(%1)
+#defcfunc defcfunc_ini_section_get_id str p1
+
+	if ini_set_complete = 0 : ini_set
+
+	ini_ret = -1
+
+	if strlen(p1) > 0{
+		repeat ini_section_cnt
+			if ini_section_name(cnt) = p1{
+				ini_ret = cnt
+				break
+			}
+		loop
+	}
+
+return ini_str_tmp
+
+
+
+;===========================================================
+/*
+%index
+ini_section_info
+iniセクション情報を取得
+
+%prm
+(p1)
+p1=0～5 : 取得するセクション情報
+
+%inst
+iniのセクション情報を取得します。
+
+取得できるセクション情報は以下の通りです。
+html{
+	<table border=1>
+		<caption>p1とセクション情報</caption>
+		<tr bgcolor="#E0E0FF">
+			<th>p1の値</th> <th>セクション情報</th> <th>登録マクロ</th> <th>返り値の型</th>
+		</tr>
+		<tr>
+			<td><center>0</center></td> <td>現在選択しているセクション名</td> <td>ini_section_info_name</td> <td><center>str</center></td>
+		</tr>
+		<tr>
+			<td><center>1</center></td> <td>現在選択しているセクションID</td> <td>ini_section_info_id</td> <td><center>int</center></td>
+		</tr>
+		<tr>
+			<td><center>2</center></td> <td>現在のセクション数</td> <td>ini_section_info_cnt</td> <td><center>int</center></td>
+		</tr>
+		<tr>
+			<td><center>3</center></td> <td>作成可能なセクションの最大数</td> <td>ini_section_info_max</td> <td><center>int</center></td>
+		</tr>
+		<tr>
+			<td><center>4</center></td> <td>現在セクションのパラメータ数</td> <td>ini_section_info_prm</td> <td><center>int</center></td>
+		</tr>
+		<tr>
+			<td><center>5</center></td> <td>現在セクションのコメント数</td> <td>ini_section_info_com</td> <td><center>int</center></td>
+		</tr>
+	</table>
+}html
+
+なお、p1に上記以外の値を指定した場合、-1が返ります。
+
+%sample
+#include "ini_system.hsp"
+
+#define load_file_name	(dir_desktop + "\\config.ini")
+
+*main
+	//ini初期化しiniファイルを読込み
+	ini_set
+	ini_load load_file_name
+
+	if stat{
+		tmp = -1
+
+		//メインセクションにパラメータを追加
+		ini_add "Pr" , tmp
+
+		repeat 10
+			tmp = cnt
+
+			//セクションを追加しパラメータを書き込む
+			ini_section_add "Section" + cnt
+			ini_section_sel "Section" + cnt
+			ini_add "Pr" , tmp
+		loop
+	}
+
+	//ランダムにセクションを選択
+	randomize
+	tmp = rnd(ini_section_info_cnt)
+	ini_section_sel_id tmp
+
+	//現在のセクションのパラメータを取得
+	ini_get "Pr" , tmp
+
+	//セクション情報を取得
+	mes "現在のセクション名 : " + ini_section_info_name
+	mes "現在のセクションID : " + ini_section_info_id
+	mes "現在のセクション数 : " + ini_section_info_cnt
+	mes "セクションの最大値 : " + ini_section_info_max
+	mes "セクションのパラメータ数 : " + ini_section_info_prm
+	mes "セクションのコメント数 : " + ini_section_info_com
+	mes "パラメータ : " + tmp
+
+	//iniファイルをデスクトップに保存
+	ini_save load_file_name
+
+stop
+
+%href
+ini_set
+ini_section_info_name
+ini_section_info_id
+ini_section_info_cnt
+ini_section_info_max
+ini_section_info_prm
+ini_section_info_com
+
+%group
+iniセクション情報取得
+
+------------------------------------------------------------
+
+%index
+ini_section_info_name
+現在のセクション名
+
+%inst
+iniの現在選択しているセクション名を取得します。
+詳しくはini_section_infoを参照してください。
+
+%href
+ini_section_info
+ini_section_info_id
+ini_section_info_cnt
+ini_section_info_max
+ini_section_info_prm
+ini_section_info_com
+
+%group
+iniセクション情報取得
+
+------------------------------------------------------------
+
+%index
+ini_section_info_id
+現在のセクションID
+
+%inst
+iniの現在選択しているセクションIDを取得します。
+詳しくはini_section_infoを参照してください。
+
+%href
+ini_section_info
+ini_section_info_name
+ini_section_info_cnt
+ini_section_info_max
+ini_section_info_prm
+ini_section_info_com
+
+%group
+iniセクション情報取得
+
+------------------------------------------------------------
+
+%index
+ini_section_info_cnt
+現在のセクション数
+
+%inst
+iniの現在のセクション数を取得します。
+詳しくはini_section_infoを参照してください。
+
+%href
+ini_section_info
+ini_section_info_name
+ini_section_info_id
+ini_section_info_max
+ini_section_info_prm
+ini_section_info_com
+
+%group
+iniセクション情報取得
+
+------------------------------------------------------------
+
+%index
+ini_section_info_max
+セクションの最大数
+
+%inst
+iniの作成可能なセクションの最大数を取得します。
+詳しくはini_section_infoを参照してください。
+
+%href
+ini_section_info
+ini_section_info_name
+ini_section_info_id
+ini_section_info_cnt
+ini_section_info_prm
+ini_section_info_com
+
+%group
+iniセクション情報取得
+
+------------------------------------------------------------
+
+%index
+ini_section_info_prm
+セクションのパラメータ数
+
+%inst
+iniの現在選択しているセクションのパラメータ数を取得します。
+詳しくはini_section_infoを参照してください。
+
+%href
+ini_section_info
+ini_section_info_name
+ini_section_info_id
+ini_section_info_cnt
+ini_section_info_max
+ini_section_info_com
+
+%group
+iniセクション情報取得
+
+------------------------------------------------------------
+
+%index
+ini_section_info_com
+セクションのコメント数
+
+%inst
+iniの現在選択しているセクションのコメント数を取得します。
+詳しくはini_section_infoを参照してください。
+
+%href
+ini_section_info
+ini_section_info_name
+ini_section_info_id
+ini_section_info_cnt
+ini_section_info_max
+ini_section_info_prm
+
+%group
+iniセクション情報取得
+
+%*/
+;------------------------------------------------------------
+#define global ctype ini_section_info(%1) defcfunc_ini_section_info(%1)
+#define global ini_section_info_name defcfunc_ini_section_info(0)
+#define global ini_section_info_id defcfunc_ini_section_info(1)
+#define global ini_section_info_cnt defcfunc_ini_section_info(2)
+#define global ini_section_info_max defcfunc_ini_section_info(3)
+#define global ini_section_info_prm defcfunc_ini_section_info(4)
+#define global ini_section_info_com defcfunc_ini_section_info(5)
+#defcfunc defcfunc_ini_section_info int p1
+
+	if ini_set_complete = 0 : ini_set
+
+	ini_ret = -1
+
+	switch p1
+
+	case 0
+		ini_ret = -2
+	swbreak
+
+	case 1
+		ini_ret = ini_section_select
+	swbreak
+
+	case 2
+		ini_ret = ini_section_cnt
+	swbreak
+
+	case 3
+		ini_ret = ini_section_max
+	swbreak
+
+	case 4
+		ini_ret = ini_parameter_cnt(ini_section_select)
+	swbreak
+
+	case 5
+		ini_ret = ini_comment_cnt(ini_section_cnt)
+	swbreak
+
+	swend
+
+	if ini_ret = -2{
+		ini_ret = -1
+		return ini_section_name(ini_section_select)
+	}
+
+return ini_ret
+
+
+
+;===========================================================
+/*
+%index
+ini_add
+iniのパラメータ追加
+
+%prm
+p1 , p2 , p3
+p1=文字列 : パラメータ名
+p2=変数 : 書き込む変数
+p3=-1,0～(-1) : 書き込む行数
+
+%inst
+ini_section_selで選択したセクションにiniのパラメータを追加します。
+追加に失敗した場合、statに1が返ります。
+
+p3で追加位置を指定します。
+省略した場合、最終行に追加されます。
+
+選択されているセクション内に既にあるパラメータ名を指定して追加した場合、追加自体は可能ですが、以下の命令・関数では若い行数のパラメータが優先で処理されます。
+・ini_get
+・ini_update
+・ini_rename
+・ini_del
+・ini_find
+
+p1及びp2の内容に改行記号("\n")は使用できません。
+
+またp1に"="を使用しなでください。
+正常に読出せなくなる可能性があります。
+
+%href
+ini_set
+ini_get
+ini_update
+
+%group
+iniパラメータ制御
+
+%*/
+;------------------------------------------------------------
+#define global ini_add(%1 , %2 , %3=-1) deffunc_ini_add %1 , %2 , %3
+#deffunc deffunc_ini_add str p1 , var p2 , int p3
+
+	if ini_set_complete = 0 : ini_set
+
+	ini_ret = 1
+
+	if strlen(p1) > 0{
+		switch vartype(p2)
+
+		case 2
+			ini_str_tmp = p1 + "=" + p2
+			ini_ret = 0
+		swbreak
+
+		case 3
+		case 4
+			ini_str_tmp = p1 + "=" + str(p2)
+			ini_ret = 0
+		swbreak
+
+		swend
+	}
+
+	if ini_ret = 0{
+		notesel ini_data(ini_section_select)
+		noteadd ini_str_tmp , p3
+		noteunsel
+
+		ini_parameter_cnt(ini_section_select) ++
+	}
+
+return ini_ret
+
+
+
+;===========================================================
+/*
+%index
+ini_get
+iniのパラメータ読出し
+
+%prm
+p1 , p2
+p1=文字列 : パラメータ名
+p2=変数 : 読出し先変数
+
+%inst
+ini_section_selで選択したセクションのiniのパラメータを読出します。
+読出しに失敗した場合、statに1が返ります。
+
+読出し処理はp2がintの場合はint、doubleの場合はdouble等、p2の型に合わせ読出されます。
+
+同じパラメータ名が複数ある場合、若い行数のパラメータを優先して読出します。
+
+p1に改行記号("\n")は使用できません。
+
+またp1に"="を使用しなでください。
+正常に読出せなくなる可能性があります。
+
+%href
+ini_set
+ini_add
+ini_update
+
+%group
+iniパラメータ制御
+
+%*/
+;------------------------------------------------------------
+#define global ini_get(%1 , %2) deffunc_ini_get %1 , %2
+#deffunc deffunc_ini_get str p1 , var p2
+
+	if ini_set_complete = 0 : ini_set
+
+	ini_ret = 1
+
+	if strlen(p1) > 0{
+		notesel ini_data(ini_section_select)
+
+		ini_index = notefind(p1 + "=" , 1)
+
+		if ini_index >= 0{
+			noteget ini_str_tmp , ini_index
+			ini_str_tmp = strmid(ini_str_tmp , instr(ini_str_tmp , 0 , "=") + 1 , strlen(ini_str_tmp) - instr(ini_str_tmp , 0 , "="))
+
+			switch vartype(p2)
+
+			case 2
+				p2 = ini_str_tmp
+				ini_ret = 0
+			swbreak
+
+			case 3
+				p2 = double(ini_str_tmp)
+				ini_ret = 0
+			swbreak
+
+			case 4
+				p2 = int(ini_str_tmp)
+				ini_ret = 0
+			swbreak
+
+			swend
+		}
+
+		noteunsel
+	}
+
+return ini_ret
+
+
+
+;===========================================================
+/*
+%index
+ini_update
+iniのパラメータ内容変更
+
+%prm
+p1 , p2
+p1=文字列 : パラメータ名
+p2=変数 : 変更する値が入った変数
+
+%inst
+ini_section_selで選択したセクションのiniのパラメータを変更します。
+変更に失敗した場合、statに1が返ります。
+
+p1及びp2の内容に改行記号("\n")は使用できません。
+
+またp1に"="を使用しなでください。
+正常に読出せなくなる可能性があります。
+
+%href
+ini_set
+ini_add
+ini_get
+ini_rename
+
+%group
+iniパラメータ制御
+
+%*/
+;------------------------------------------------------------
+#define global ini_update(%1 , %2) deffunc_ini_update %1 , %2
+#deffunc deffunc_ini_update str p1 , var p2
+
+	if ini_set_complete = 0 : ini_set
+
+	ini_ret = 1
+
+	if strlen(p1) > 0{
+		notesel ini_data(ini_section_select)
+
+		ini_index = notefind(p1 + "=" , 1)
+
+		if ini_index >= 0{
+			switch vartype(p2)
+
+			case 2
+				ini_str_tmp = p1 + "=" + p2
+				ini_ret = 0
+			swbreak
+
+			case 3
+			case 4
+				ini_str_tmp = p1 + "=" + str(p2)
+				ini_ret = 0
+			swbreak
+
+			swend
+
+			if ini_ret = 0{
+				noteadd ini_str_tmp , ini_index , 1
+			}
+		}
+
+		noteunsel
+	}
+
+return ini_ret
+
+
+
+;===========================================================
+/*
+%index
+ini_rename
+iniのパラメータ名の変更
+
+%prm
+p1, p2
+p1=文字列 : 変更前のパラメータ名
+p2=文字列 : 変更後のパラメータ名
+
+%inst
+ini_section_selで選択したセクションのiniのパラメータ名を変更します。
+変更に失敗した場合、statに1が返ります。
+
+p1及びp2に改行記号("\n")は使用できません。
+
+またp1、p2に"="を使用しなでください。
+正常に読出せなくなる可能性があります。
+
+%href
+ini_set
+ini_update
+
+%group
+iniパラメータ制御
+
+%*/
+;------------------------------------------------------------
+#define  global ini_rename(%1 , %2) deffunc_ini_rename %1 , %2
+#deffunc deffunc_ini_rename str p1 , var p2
+
+	if ini_set_complete = 0 : ini_set
+
+	ini_ret = 1
+
+	if strlen(p1) > 0 & strlen(p2) > 0{
+		notesel ini_data(ini_section_select)
+
+		ini_index = notefind(p1 + "=" , 1)
+
+		if ini_index >= 0{
+			noteget ini_str_tmp , ini_index
+			ini_str_tmp = strmid(ini_str_tmp , instr(ini_str_tmp , 0 , "=") + 1 , strlen(ini_str_tmp) - instr(ini_str_tmp , 0 , "="))
+
+			noteadd p2 + "=" + ini_str_tmp , ini_index , 1
+		}
+
+		noteunsel
+	}
+
+return ini_ret
+
+
+
+;===========================================================
+/*
+%index
+ini_del
+iniのパラメータ削除
+
+%prm
+p1 , p2
+p1=文字列 : パラメータ名
+p2=0,1(1) : 行シフトフラグ
+
+%inst
+ini_section_selで選択したセクションのiniのパラメータを削除します。
+削除に失敗した場合、statに1が返ります。
+
+p2は使用しているノートパッドの行数をシフトするかどうかの選択です。
+省略した場合、もしくは1を指定した場合に以降の行のシフトを行います。
+0を指定した場合は空行になります。
+
+p1に改行記号("\n")は使用できません。
+
+%href
+ini_set
+
+%group
+iniパラメータ制御
+
+%*/
+;------------------------------------------------------------
+#define global ini_del(%1 , %2 = 1) deffunc_ini_del %1 , %2
+#deffunc deffunc_ini_del str p1 , int p2
+
+	if ini_set_complete = 0 : ini_set
+
+	ini_ret = 1
+
+	if strlen(p1) > 0{
+		notesel ini_data(ini_section_select)
+
+		ini_index = notefind(p1 + "=" , 1)
+
+		if ini_index >= 0{
+			if p2{
+				notedel ini_index
+				ini_ret = 0
+			}else{
+				noteadd "" , ini_index , 1
+				ini_ret = 0
+			}
+
+			ini_parameter_cnt(ini_section_select) --
+		}
+
+		noteunsel
+	}
+
+return ini_ret
+
+
+
+;===========================================================
+/*
+%index
+ini_comment
+iniにコメントを追加
+
+%prm
+p1 , p2
+p1=文字列 : 追加するコメント
+p2=-1,0～(-1) : 書き込む行数
+
+%inst
+ini_section_selで選択したセクションのiniにコメントを追加します。
+追加に失敗した場合、statに1が返ります。
+
+p1を省略した場合、空文字 "" が指定されます。
+
+実際にiniのコメントとして扱うために、p1の先頭にセミコロン(";")が挿入された状態でコメントを挿入します。
+先頭にセミコロンを含むコメントを指定した場合はそのままコメントを挿入しますが、先頭がセミコロンではない場合はセミコロンを付けて挿入されます。
+
+ただし、空文字を指定した場合はセミコロンを付けず、空行になります。
+
+追加位置はp2で指定します。
+p2を省略、もしくは-1を指定した場合の追加位置は現在セクションの最終行になります。
+
+%href
+ini_set
+
+%group
+iniコメント制御
+
+%*/
+;------------------------------------------------------------
+#define global ini_comment(%1 = "" , %2 = -1) deffunc_ini_comment %1 , %2
+#deffunc deffunc_ini_comment str p1 , int p2
+
+	if ini_set_complete = 0 : ini_set
+
+	ini_ret = 1
+	ini_str_tmp = p1
+
+	if strlen(ini_str_tmp) > 0{
+		if strmid(ini_str_tmp , 0 , 1) != ";"{
+			ini_str_tmp = ";" + ini_str_tmp
+		}
+	}
+
+	notesel ini_data(ini_section_select)
+	noteadd ini_str_tmp , p2
+	noteunsel
+
+	ini_comment_cnt(ini_section_cnt) ++
+
+	ini_ret = 0
+
+return ini_ret
+
+
+
+;===========================================================
+/*
+%index
+ini_find
+iniのパラメータを検索
+
+%prm
+(p1)
+p1 : 検索するパラメータ名
+
+%inst
+ini_section_selで選択したセクションのiniのパラメータを検索します。
+返り値は行数です。
+パラメータが存在しなかった場合、-1が返ります。
+
+%href
+ini_set
+
+%group
+iniパラメータ制御
+
+%*/
+;------------------------------------------------------------
+#define global ctype ini_find(%1) defcfunc_ini_find(%1)
+#defcfunc defcfunc_ini_find str p1
+
+	if ini_set_complete = 0 : ini_set
+
+	ini_ret = -1
+
+	if strlen(p1) > 0{
+		notesel ini_data(ini_section_select)
+
+		ini_ret = notefind(p1 + "=" , 1)
+
+		noteunsel
+	}
+
+return ini_ret
+
+
+
+#global
+#endif

@@ -1,0 +1,49 @@
+*CMD_FUNC_EXECUTE
+	screen 6, ginfo_dispx, ginfo_dispy, 2, , , 420, 340
+	if VARIABLE_CONF_MDI=0{GetWindowLong hWnd,-16:SetWindowLong hWnd,-16,stat|$00CF0000:SetParent hWnd,hClient:gsel 6:width ,,0,0}
+	title "Execute JavaScript - ISMemoria" : font "Consolas", 11 : hWnd6 = hwnd : objmode 2
+	sdim bufExec, 1024 : sdim bufRes, 1024
+	pos 0, 0 : objsize ginfo_winx, 20
+	button gosub "Execute Javascript", *BTN_EXEC : hBtnExec = objinfo_hwnd(stat)
+	p1 = (ginfo_winy - 20) / 2 : pos 0, 20
+	if ExecuteS!=""{bufExec=ExecuteS}else{bufExec="Input Here!"}
+	bufRes="Feedback Report..."
+	mesbox bufExec, ginfo_winx, p1 : hMbExec = objinfo_hwnd(stat)
+	pos 0, p1 + 20
+	mesbox bufRes, ginfo_winx, p1, 0: hMbRes = objinfo_hwnd(stat)
+	oncmd gosub *WM6_SIZE,  0x0005
+	oncmd gosub *WM6_CLOSE, 0x0010
+	SetWindowPos hWnd6, -1, 0, 0, 0, 0, 0x63
+	return
+
+*WM6_SIZE
+	GetClientRect hWnd6, varptr(rc)
+	rc(3) = (rc(3) - 20) / 2
+	MoveWindow hBtnExec, 0, 0, rc(2), 20, 1
+	MoveWindow hMbExec, 0, 20, rc(2), rc(3), 1
+	MoveWindow hMbRes, 0, rc(3) + 20, rc(2), rc(3), 1
+	return
+
+*WM6_CLOSE
+	SetWindowPos hWnd6, 0, 0, 0, 0, 0, 0x83
+	return 0
+
+*BTN_EXEC
+	gosub *TAB_GETINFO
+	if ( pTabInfo == 0 ){ return }
+	EnableWindow hBtnExec, 0
+	p1 = (GetWindowTextLengthW(hMbExec) + 1) * 2
+	sdim bufTmp, p1
+	GetWindowTextW hMbExec, varptr(bufTmp), p1
+	dupptr dp, WV2_DATA_SIZE * 16 + pTabInfo, WV2_DATA_SIZE * 4, 4
+	WebView2_EventInit WV2_EVENT_EXECUTESCRIPT, 0, 0, dp
+	if ( CCall2(dpCtrl(1), WV2_ExecuteScript, 2, varptr(bufTmp), dp) == 0 ){
+		WebView2_EventWait dp
+		if ( dp(WV2_DATA_WP) == 0 ){
+			if ( WebView2_CnvWinStr(dp(WV2_DATA_LP), bufTmp) ){
+				SetWindowTextA hMbRes, varptr(bufTmp)
+			}
+		}
+	}
+	EnableWindow hBtnExec, 1
+	return

@@ -1,0 +1,205 @@
+/*
+	□---------------------------□
+	 | Internet Stroller Memoria |
+	□---------------------------□
+	Website:"https:/abatbeliever.net/InternetStroller/"
+	
+//==============================================================================================
+	ISMemoriaのコードにはMPLライセンスが適応されます。
+
+	Copyright(C) ABATBeliever 2021-2025
+	詳細は License/ABATBeliever.InternetStroller/                               を参照ください。
+//==============================================================================================
+	依存関係としてWebView2Loader.dllがあり、
+	MicrosoftによるBSD-3-Clause Licenseが適応されます。
+	
+	Copyright (C) Microsoft Corporation. All rights reserved.
+	詳細は License/Microsoft.WebView2Runtime/                                   を参照ください。
+//==============================================================================================
+	依存関係としてmodTaskDialog.hspがあり、
+	イノビア氏によるフリーウェアの原則が適応されます。
+	
+	詳細は src/Dynamic/modTaskDialog.hsp                                        を参照ください。
+//=============================================================================================
+	依存関係としてMuiliDialog.hsp, Toast.hspがあり、
+	HSP掲示板によるフリーウェアの原則が適応されます。
+	
+	詳細は 各ファイル                                                           を参照ください。
+//=============================================================================================
+	依存関係としてStatusBar32.hspがあり、
+	窓月らら氏(Discordより)によるフリーウェアの原則が適応されます。
+	
+	詳細は src/Static/StatusBar32.hsp                                           を参照ください。
+//=============================================================================================
+	このソフトウェアは、hiro氏によるsample2 を元に開発されました。
+	フリーウェアの原則が適応されます。
+	
+	詳細は https://blog.goo.ne.jp/hiro239415/e/5041aec497e02427c2b123aef07977e3 を参照ください。
+//=============================================================================================
+    このソフトウェアは、hsp掲示板による多くの助力により開発されました。
+    詳しくは、Aboutダイアログ                                                   を参照ください。
+*/
+#packopt version "Build.ini"	//詳細
+#packopt icon "image.ico"		//アイコン
+#epack "mswv.pak"				//WebView2Loader.dll
+#epack "hsc.pak"				//HSPinet.dll
+#packopt hide 1
+
+#include "lib/hsp3utf.def"	//UTF-8(ソースはANSIで記述)
+#include "lib/hspdef.def"	//HSP標準マクロ(3.6)
+
+#define ISName "InternetStroller Memoria"
+#define ISDeepVersion "Beta1"
+#define ISCommonVer "3200"
+#define ISBuildNumber "3.200.1079.0"
+#define ISBuildDay ""+__date__+" "+__time__
+#enum IsClickSystemMenu1
+ISVersion=ISDeepVersion+" Ver 2.0.0.0"
+hBrowser=hwnd
+title ISName
+
+redraw 0			//あまり意味はないが、速度向上
+DoCheckCompatible	//互換性確認
+
+//===============================================================================
+//  <ウィンドウID一覧>
+//0 (メインウィンドウ)
+//1 RSS
+//2 ManaPAD
+//3 Aboutウィンドウ
+//4 FunctionManager
+//5 (JavaScript実行)
+//===============================================================================
+
+#include "lib/shell32.def"
+#include "lib/hspinet.def"
+
+#include "lib/comdlg32.def"
+
+#include "src/Dynamic/modTaskDialog.hsp"		
+#include "src/Dynamic/module_iniLoader.hsp"			
+#include "src/Dynamic/MultiDialog.hsp"			
+#include "src/Dynamic/Toast.hsp"
+onerror *ERROR
+
+#uselib "gdi32.dll"
+#uselib "user32.dll"
+#func SetProcessDPIAware "SetProcessDPIAware"	//DPIパッチの準備
+#include "src/Dynamic/WindowColor.hsp"			//ウィンドウカラーの変更定義
+
+//===============================================================================
+#module
+	#defcfunc FileCheck str filename				//ファイルチェック
+		exist filename
+		if strsize=-1{return 1}
+	return 0
+#global
+
+//===============================================================================
+
+DoINIConfigLoad	//INIロード
+
+//===============================================================================
+
+if FileCheck("WebView2Loader.dll")=1{bcopy "mswv.pak",""+dir_cur+"\\WebView2Loader.dll"}
+
+#include "src/Dynamic/LoadWebView.hsp"				//WebViewロード
+#include "src/Dynamic/SetEvent.hsp"					//WebView系イベント登録
+DoDefinePopup										//ポップアップ
+DoSetColor											//Win11なら色指定
+
+#include "src/Dynamic/Graphic.hsp"					//UI初期描画
+
+//===============================================================================
+DoGenerateIncludeHTML
+create_statusbar ""									//ステータスバー描画初期化
+p=300,360,-1:sendmsg h_stbar,$404,3,varptr(p)		//ステータスバー分割
+tmp=ISName+" "+ISVersion:set_statusbar 0,tmp		//Version
+
+//===============================================================================
+
+if dir_cmdline = "" {                    			//初期URL。引数指定があればそれを、無ければiniより
+	DEF_URL = getSini("IsFIRSTURL")
+	if DEF_URL = "include" { 						//内蔵が指定された場合はindex.htmlを展開
+		if FileCheck("index.html")=1{DoGenerateIncludeHTML}
+		DEF_URL="file://"+dir_cur+"\\index.html"+getSini("DefaultPageColorRGB")
+	}
+	cnvstoa DEF_URL,str(DEF_URL)
+	gosub *TAB_ADD
+}else{
+	DEF_URL = dir_cmdline
+	gosub *TAB_ADD
+	if DEF_URL = "include" and FileCheck("index.html")=1{DoGenerateIncludeHTML}
+	DEF_URL="file://"+dir_cur+"\\index.html"+getSini("DefaultPageColorRGB")
+	cnvstoa DEF_URL,str(DEF_URL)
+}
+	
+gosub *TAB_UPDATE
+gosub *WM_SIZE
+
+if FileCheck(dir_exe+"\\hspinet.dll")=1{bcopy "hsc.pak",""+dir_exe+"\\hspinet.dll"}
+HSPSelfConnect_init	//RSSフィード向けの通信初期化
+gosub *CMD_UPDATE	//更新確認
+
+redraw 1
+stop				//ここまでのincludeは動的ロード(処理を回すべき)、ここから先は*のジャンプ先
+
+//===============================================================================
+#include "src/Static/HSC.hsp"					//独自通信コンポーネント
+#include "src/Static/StatusBar32.hsp"			//ステータスバーの定義
+#include "src/Static/Command.hsp"				//起動時の拡張命令形
+
+#include "src/Static/EVENT/WM.hsp"				//ウィンドウ系イベントの番地
+#include "src/Static/EVENT/Tab.hsp"				//タブ系のイベント
+#include "src/Static/EVENT/WebView.hsp"			//WebViewのイベント
+#include "src/Static/EVENT/CMD.hsp"				//ユーザ起点のイベント
+
+#include "src/Static/Extend/RSSer.hsp"			//RSSフィード
+#include "src/Static/Extend/ManaPAD.hsp"		//タブレット向け操作パネル
+#include "src/Static/Extend/ExecuteJS.hsp"		//JavaScript実行
+#include "src/Static/Extend/IScript.hsp"		//IScriptインタプリタ
+#include "src/Static/Extend/URLPush.hsp"		//URL移動
+
+//===============================================================================
+*ERROR		//エラー時にトースト通知を出して終了
+	SetTrayIconFile "user32.dll"
+	CreateTrayIcon "",1,0
+	PopupBalloonTip "Error Report ["+ISVersion+"]",""+ISName+" has Self-Stopped.\n\nError Type>>"+wparam+"\nPlease Report to ABATBeliever",2,0
+	end:end
+
+//===============================================================================
+*button1set
+	dialog "OLD"
+	return
+
+//===============================================================================
+*SetColor	//色指定
+	dialog "OLD"
+return
+
+*POP_URL
+	dialog "OLD"
+return
+
+*CallExit		//0番以外のxの定義
+gsel 0
+if wparam!=0{
+	gsel wparam,-1:return
+}
+gosub *ISWindowExit
+
+*ISWindowExit	//終了
+gsel 0
+title "Please exit from taskmgr"
+DestroyMenu hMenu.0
+if ( IsWindowVisible(hWnd6) ){SetWindowPos hWnd6, 0, 0, 0, 0, 0, 0x83}
+/*
+if IShwndBit(1)=1{gosub *RSSerEND}		//先に終了する
+if IShwndBit(2)=1{gosub *IScript_END}
+if IShwndBit(3)=1{gosub *MANA_CLOSE}
+if IShwndBit(4)=1{gosub *CMD_ABOUT_2}
+if IShwndBit(5)=1{gosub *CMD_FUNC_CLOSE}
+*/
+gsel 0,-1
+WebView2_Release pEnv
+end:end		//3.6までは終了をすり抜けるバグあり

@@ -1,0 +1,54 @@
+;InternetStroller Memoria ISConfig.ini
+[HEAD]
+VERSION=3
+WRITER=ABATBeliever
+LANGUAGE=JAPANESE-日本語
+WRITEDAY=2024/09/14
+
+[REG]
+;0=Enable
+ISCRIPTENABLE=0
+MDI=1
+DPI=0
+;UserAgent (Default=>'')
+DEFUA=
+STBAR=0
+;DefalutPageColor (Default=>'' #<BackGround>,<Text>,<Section BackGround> RGB)
+DEFPAGECOLOR=
+;WindowPageColor  (Default=>'' #<CaptionColor>,<BorderColor>,<TextColor> RGB)
+WindowColor=128,128,128#000,000,000#255,255,255
+AUTOSEARCH=0
+
+[URLs]
+;Search URL(MANA PAD)
+;First URL(Original:"include")
+FIRST=include
+SEARCH=https://www.google.co.jp/search?q=
+GETUPDATE=https://abatbeliever.net/InternetStroller/downloads.html#
+TRANSLATE=https://translate.google.com/translate?sl=auto&tl=ja&hl=ja&u=
+REPORT=https://abatbeliever.net/InternetStroller/report/memoria.html
+
+[Passage]
+SENDBACK=戻る
+SENDFORWARD=進む
+SENDRELOAD=読込直し
+NAVIGATE=URLへ移動
+NEWTAB=タブ追加(+)
+CLONETAB=タブ複製
+DELETETAB=タブ閉じる(-)
+CAPUTURE=画像キャプチャ
+ISABOUT=About
+LOCAL=ローカル
+MANAPADNAME=まなPAD
+DOWNLOADS=ダウンロード履歴
+CLOSE=閉じる
+INICONFIG=ISConfig.ini情報
+MOVEURL=URLへ移動
+SEARCHURL=文字を検索
+MANACLOSE=閉じる
+UPDATE=更新確認
+TRACK=閲覧履歴
+FUNCTION1=その他の機能
+FUNCTIONTITLE=Conf
+SEARCHTEXT=文字列を検索
+TRANSLATE=ページを翻訳

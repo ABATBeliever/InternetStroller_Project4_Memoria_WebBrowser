@@ -1,0 +1,36 @@
+	DoSetPatch 0,0
+	screen 0,ginfo(20),ginfo(21)
+	width int(getSini("WindowSizeX")),int(getSini("WindowSizeY")),(ginfo(20)/2)-(int(getSini("WindowSizeX"))/2),(ginfo(21)/2)-(int(getSini("WindowSizeY"))/2)
+	gsel 0,1
+	WebView2_InitWnd 0		//WebViewの準備
+	hWnd0 = hwnd
+	font "FixedSys":objmode 2
+	dim wndInfo, 7
+
+	#uselib "gdi32"
+	#func global SetBkColor "SetBkColor" sptr,sptr
+	#func global SetBkMode "SetBkMode" sptr,sptr
+	#func global SetTextColor "SetTextColor" sptr,sptr
+	#func global CreateSolidBrush "CreateSolidBrush" sptr
+	#func global DeleteObject "DeleteObject" sptr
+
+	CreateWindowExA 0, "edit", 0, 0x56000080, -10, -10, 0, 0, hWnd0, 0, hinstance, 0			//URLバー(hide)
+	hEditUrl = stat : sendmsg hEditUrl, WM_SETFONT, hFont, 1
+	bufTmp = DEF_URL : SetWindowTextA hEditUrl, varptr(bufTmp)
+	dim rc, 4 : dim tci, 7 : bAdd = 0 : bDel = 0
+
+	CreateWindowExA 0, "SysTabControl32", 0, 0x56008468, 0, 0, 0, 0, hWnd0, 0, hinstance, 0	//タブ
+	hTab = stat : sendmsg hTab, WM_SETFONT, hFont, 1
+	p1 = 0 << 16 : p1 |= 160 : sendmsg hTab, 0x1329, 0, p1
+
+	pEnv = WebView2_CreateEnv()//WebView召喚
+	if ( pEnv == 0 ){ gsel 0, 1 : dialog "WebView Can't Extract!\nLack of authorization or WebView2 runtime does not exist.",1, "FATAL":end}
+	curCtrl = 0 : curView = 0
+
+	DoSetButton
+
+	CreateSolidBrush RGB(192, 192, 192)
+	hBrush_fu = stat
+	sdim frontURL
+	pos 120,25:input frontURL,ginfo(12),30,0
+	hFrontURL = objinfo(stat, 2)

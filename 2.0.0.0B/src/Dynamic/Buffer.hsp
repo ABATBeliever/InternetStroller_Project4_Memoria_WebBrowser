@@ -1,0 +1,9 @@
+buffer 6,640,480:title "buffer"
+pos 000,0:picload "src/img/DoPrvNegative.png",1
+pos 030,0:picload "src/img/DoPrvExcitation.png",1
+pos 060,0:picload "src/img/DoAdvNegative.png",1
+pos 090,0:picload "src/img/DoAdvExcitation.png",1
+pos 120,0:picload "src/img/DoRelNegative.png",1
+pos 150,0:picload "src/img/DoRelExcitation.png",1
+pos 180,0:picload "src/img/DoBBNNegative.png",1
+pos 210,0:picload "src/img/DoBBNExcitation.png",1

@@ -1,0 +1,16 @@
+Dynamic
+起動中にロードすべき動的定義
+処理を通す必要がある
+
+Static
+起動時にロードすべきでない静的定義
+*のジャンプ先の定義,deffunc等
+
+Static/EVENT
+特にWebView系に必須なイベントの静的定義
+
+Static/Extend
+ISMemoria独自の機能の静的定義
+
+img
+バンドルされるリソース(dll,画像など)

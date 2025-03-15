@@ -1,0 +1,112 @@
+*MENU_UPDATE
+	gosub *EVENT_URL
+	mi(1) = 1
+	if ( CCall2(dpCtrl(1), WV2_get_CanGoBack, 1, varptr(p1)) == 0 ){
+		if ( p1 ){ mi(3) = 0 }
+		else { mi(3) = 3 }
+	}
+	else { mi(3) = 3 }
+	SetMenuItemInfo hMenu, 0, 1, varptr(mi)
+	if ( CCall2(dpCtrl(1), WV2_get_CanGoForward, 1, varptr(p1)) == 0 ){
+		if ( p1 ){ mi(3) = 0 }
+		else { mi(3) = 3 }
+	}
+	else { mi(3) = 3 }
+	SetMenuItemInfo hMenu, 1, 1, varptr(mi)
+	DrawMenuBar hWnd0
+	return
+
+*TAB_GETINFO
+	sendmsg hTab, TCM_GETCURSEL, 0, 0 : iTab = stat
+	gosub *TAB_GETINFO2
+	set_statusbar 2,bufTmp
+	return
+
+*TAB_GETINFO2
+	pTabInfo = 0
+	if ( iTab == -1 ){ return }
+	tci(0) = 8 : sendmsg hTab, TCM_GETITEMA, iTab, varptr(tci)
+	if ( stat == 0 ){ return }
+	pTabInfo = tci(6)
+	dupptr dpCtrl, WV2_DATA_SIZE * 28 + pTabInfo, 8, 4
+	return
+
+*TAB_SELECT
+	gosub *TAB_GETINFO
+	gosub *EVENT_URL
+	if ( pTabInfo == 0 ){ return }
+	pView = -1 : gosub *TAB_UPDATE
+	gosub *WM_SIZE
+	ret = CCall2(dpCtrl, WV2Ctrl_put_IsVisible, 1, 1)
+	return
+
+*TAB_UPDATE
+	gosub *TAB_GETINFO
+	gosub *EVENT_URL
+	if ( pTabInfo == 0 ){ return }
+	gosub *MENU_UPDATE
+	if ( CCall2(dpCtrl(1), WV2_get_DocumentTitle, 1, varptr(p1)) == 0 ){
+		if ( pView == -1 || pView == dpCtrl(1) ){ SetWindowTextW hWnd0, p1 }
+		tci(0) = 1 : tci(3) = p1
+		sendmsg hTab, TCM_SETITEMW, iTab, varptr(tci)
+		CoTaskMemFree p1
+	}
+	if ( pView == -1 || pView == dpCtrl(1) ){
+		if ( CCall2(dpCtrl(1), WV2_get_Source, 1, varptr(p1)) == 0 ){
+			SetWindowTextW hEditUrl, p1
+			CoTaskMemFree p1
+		}
+	}
+	sdim pszText
+	sendmsg hwnd, $D, 64, varptr(pszText)
+	gosub *WM_SIZE
+	sendmsg hTab, TCM_GETITEMCOUNT, 0, 0:tmp=""+str(iTab+1)+"/"+stat:set_statusbar 1,tmp
+	return
+
+*TAB_ADD
+	if ( bAdd ){ return }
+	bAdd = 1
+	gosub *TAB_ADD2
+	gosub *EVENT_SET
+	gosub *TAB_SELECT
+	bufTmp = DEF_URL
+	SetWindowTextA hEditUrl, varptr(bufTmp)
+	gosub *CMD_NAVIGATE
+	bAdd = 0
+	return
+
+*TAB_ADD2
+	gosub *TAB_GETINFO
+	if ( pTabInfo ){
+		ret = CCall2(dpCtrl, WV2Ctrl_put_IsVisible, 1, 0)
+	}
+	sendmsg hTab, TCM_GETITEMCOUNT, 0, 0 : iTab = stat
+	tci(0) = 9 : tci(6) = 0
+	bufTmp = bufTmp : tci(3) = varptr(bufTmp)
+	sendmsg hTab, TCM_INSERTITEMA, iTab, varptr(tci)
+	sendmsg hTab, TCM_SETCURSEL, iTab, 0
+	curCtrl = WebView2_CreateCtrl(pEnv, hWnd0)
+	curView = WebView2_GetView(curCtrl)
+	if ( curCtrl == 0 || curView == 0 ){
+		gosub *TAB_DEL
+		return
+	}
+	return
+
+*TAB_DEL
+	sendmsg hTab, TCM_GETITEMCOUNT, 0, 0
+	if ( stat <= 1 ){ goto *ISWindowExit }
+	if ( bDel ){ return }
+	bDel = 1
+	gosub *TAB_GETINFO2
+	if ( pTabInfo == 0 ){ return }
+	ret = CCall2(dpCtrl(0), WV2Ctrl_Close, 0)
+	WebView2_Release dpCtrl(1)
+	WebView2_Release dpCtrl(0)
+	HeapFree GetProcessHeap(), 0, pTabInfo
+	sendmsg hTab, TCM_DELETEITEM, iTab, 0
+	if ( iTab ){ iTab-- }
+	sendmsg hTab, TCM_SETCURSEL, iTab, 0
+	gosub *TAB_SELECT
+	bDel = 0
+	return
