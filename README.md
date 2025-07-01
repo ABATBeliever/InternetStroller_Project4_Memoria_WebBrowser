@@ -42,15 +42,9 @@ issue、HSPコンテスト2024、[Twitter](https://x.com/abatbeliever)へ。
 
 [WebView2Loader.dll](https://www.nuget.org/packages/Microsoft.Web.WebView2)
 
-[hspinets.dll](https://hsp.moe/#hspinet)
-
-[文字列の置換コード](https://archive.kerupani129.net/blog/posts/hsp-%E6%96%87%E5%AD%97%E5%88%97%E7%BD%AE%E3%81%8D%E6%8F%9B%E3%81%88-%E3%81%A7%E3%81%8D%E3%82%8B%E4%BA%BA%E3%81%AF%E3%81%A7%E3%81%8D%E3%82%8B%E3%81%A8%E6%80%9D%E3%81%86%E3%81%91%E3%81%A9%E3%81%A7/)
-
 [バルーン通知](https://hsp.tv/play/pforum.php?mode=pastwch&num=47647)
 
 [UserAgent](https://hsp.tv/play/pforum.php?mode=all&num=100931)
-
-[iniモジュール,許諾の元改造](https://dev.onionsoft.net/seed/info.ax?id=2367)
 
 [マルチダイアログ](https://hsp.moe/#taskdialog)
 
