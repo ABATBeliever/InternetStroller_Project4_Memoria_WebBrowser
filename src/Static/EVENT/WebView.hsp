@@ -9,6 +9,7 @@
 	return
 
 *EVENT_FULLSCR	//フルスクリーン
+	return/*
 	gosub *TAB_GETINFO
 	gosub *EVENT_URL
 	if ( pTabInfo == 0 ){ return }
@@ -27,8 +28,9 @@
 		SetWindowLong hWnd0, -16, wndInfo(1) & 0xff000000
 		if ( WebView2_GetMonitorRect(hWnd0, rc) == 0 ){ return }
 		SetWindowPos hWnd0, -1, rc(0), rc(1), rc(2), rc(3), 0x220
-		if VARIABLE_CONF_DPI=0 {WebView2_Size dpCtrl(0), 0, 0, rc(2), rc(3)-25-(DPISETPOS*2)}	//DPIなら調整
-		clrobj 0,0	//便利ボタンを消す
+		if getSini("IsEnableDPI")=0 {WebView2_Size dpCtrl(0), 0, 0, rc(2), rc(3)-25-(DPISETPOS*2)}	//DPIなら調整
+		clrobj 0,6	//便利ボタンを消す
+		clrobj 0,7
 	}
 	else {
 		ShowWindow hEditUrl, 5
@@ -39,8 +41,10 @@
 		if ( wndInfo(0) & 0x8 ){ p1 = -1 } else { p1 = -2 }
 		SetWindowPos hWnd0, p1, wndInfo(3), wndInfo(4), wndInfo(5), wndInfo(6), 0x220
 		ShowWindow hWnd0, 1
-		gosub *Button1Set	//再設定
-	}
+		DoSetButton	//再設定
+		pos 120,25:input frontURL,ginfo(12),30,0
+		hFrontURL = objinfo(stat, 2)
+	}*/
 	return
 
 *EVENT_NEWWND

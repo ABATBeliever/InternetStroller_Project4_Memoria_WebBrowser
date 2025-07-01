@@ -2,12 +2,12 @@
 // WebViewを召喚する定義とアセンブリ
 #ifndef MOD_WEBVIEW2_HSP_
 #define global MOD_WEBVIEW2_HSP_
-#include "user32.as"
-#include "kernel32.as"
+#include "lib/user32.def"
+#include "lib/kernel32.def"
 #ifndef CreateEventExA
 #func global CreateEventEx "CreateEventExA" int,int,int,int
 #endif // CreateEventExA
-#include "ole32.as"
+#include "lib/ole32.def"
 #ifndef SHCreateStreamOnFileEx
 #uselib "Shlwapi.dll"
 #func global SHCreateStreamOnFileEx "SHCreateStreamOnFileEx" wptr,int,int,int,int,var

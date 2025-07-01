@@ -21,4 +21,5 @@
 #deffunc set_statusbar int _p1, var _p2
 	_p2=cnvwtos(_p2)	//C³(UTF-8‚Å‚È‚¢‚È‚çÁ‚·‚±‚Æ)
     sendmsg h_stbar,$401,_p1,_p2
+    DoSetFrontURL//“¯•ÏX
     return

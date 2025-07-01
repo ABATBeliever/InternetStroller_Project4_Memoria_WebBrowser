@@ -1,16 +1,16 @@
 //自作スクリプト系
 *IScript
-IShwndBit(2)=1
-if VARIABLE_CONF_ISCRIPTENABLE != 0 {return}
+if getSini("IsEnableIScript")=1 {return}
+IShwndBit(4)=1
 gosub *IScript_GUI
 return
 
 *IScript_GUI
-screen 2,280,200
-gsel 2,2
-if VARIABLE_CONF_MDI=0{GetWindowLong hWnd,-16:SetWindowLong hWnd,-16,stat|$00CF0000:SetParent hWnd,hClient:gsel 8:width ,,0,0}
-gsel 2
-gosub *SetColor
+screen 4,280,200
+gsel 4,2
+DoSetColor
+DoSetPatch 4
+gsel 4,2
 GetWindowLong hwnd, -16
 SetWindowLong hwnd, -16, stat - $20000
 title "IScript GUI for Memoria 1.10"
@@ -26,7 +26,7 @@ return
 *IScript_Path
 dialog "isc",16,""
 if stat = 0 : return
-gsel 2
+gsel 4
 IScriptPath=refstr
 objprm 0,getpath (refstr, 8)
 gsel 0
@@ -200,7 +200,7 @@ await 0 //クラッシュ対策
 				swbreak
 				
 				case "capturewnd"
-					gosub *CMD_CAPTURE
+					gosub *CMD_CAPTURE_ASK
 				swbreak
 
 				case "jumpto"//ジャンプしまーす
@@ -232,6 +232,6 @@ if IScript_Running!=0{
 	dialog "Currently running.\nDo you want to force stop?\n\n現在実行中です強制停止しますか?",3,"IScript"
 	if stat=6{ISCommonFlags="stop":dialog "Script force stop flagged.\nThe following commands will not be executed.\n\nスクリプト実行停止フラグを立てました。\nコマンドは実行されません",1,"":IScript_Running=0:return}
 }
-gsel 2,-1
+gsel 4,-1
 gsel 0
 return

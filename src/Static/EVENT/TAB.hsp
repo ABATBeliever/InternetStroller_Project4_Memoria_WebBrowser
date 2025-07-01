@@ -76,6 +76,7 @@
 *TAB_ADD
 	if ( bAdd ){ return }	//ƒ^ƒu’Ç‰ÁŒn
 	bAdd = 1
+	gsel 0:objprm 7,""
 	gosub *TAB_ADD2
 	gosub *EVENT_SET
 	gosub *TAB_SELECT

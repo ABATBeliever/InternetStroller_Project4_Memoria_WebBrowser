@@ -1,0 +1,40 @@
+//iniLoader 2024-2025 ABATBeliever
+#module
+	#deffunc Loadini str p1
+		#uselib "kernel32.dll"
+		#func FatalAppExit "FatalAppExitA" int,str
+		tmp@=""
+		LoadiniNameList=""
+		LoadiniPassageList=""
+		exist dir_cur+"\\"+p1										//存在確認
+		if strsize=-1{tmp@="Fail":return}
+	
+		notesel Loadini_buffer										//ロード
+		noteload dir_cur+"\\"+p1
+
+		noteget tmp,2
+		split tmp,"=",tmp
+		if tmp(1)!=4{dialog "ISConfig.ini Version is invalid"}
+
+		LoadiniMax=notemax
+		repeat LoadiniMax											//分析
+			sdim tmp												//tmp解放
+			noteget tmp,cnt
+			split tmp,"=",tmp
+			if length(tmp)<2{continue}
+			strrep tmp(1),"*","="
+			LoadiniNameList(cnt)=tmp(0):LoadiniPassageList(cnt)=tmp(1)
+		loop
+
+		noteunsel													//note解放
+	return
+
+	#defcfunc getSini str p1
+		tmp="invalid"
+		repeat LoadiniMax
+			if LoadiniNameList(cnt)=p1{tmp=LoadiniPassageList(cnt):break}
+			if cnt=LoadiniMax-1{dialog "ISConfig.ini Setting data '"+p1+"' is missing.\nThis occurs when the version is upgraded, etc.\nDelete and restart to generate it automatically or fix it manually.\n\n値'"+p1+"'が欠損しています。バージョンを上げた場合等に発生します。削除して再起動して自動生成するか、手動で修正してください。\n\nExit Browser(Y)/Ignore(N)",2:if stat=6{end}}
+		loop
+	return tmp
+
+#global

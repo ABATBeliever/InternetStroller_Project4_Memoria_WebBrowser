@@ -8,4 +8,3 @@ del /f packfile
 del /f index.html
 del /f WebView2Loader.dll
 del /f hspinet.dll
-pause>>nul

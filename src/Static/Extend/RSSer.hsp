@@ -11,6 +11,7 @@
 //0.96	サイズ
 //1.00  正式版
 //1.10  hspinetに移動、UTF-8化
+//1.11  関数化(Do系)
 IShwndBit(1)=1
 RSSAppName="RSSer"
 RSSAppVer="v1.10"
@@ -21,9 +22,10 @@ GUIArticle=""
 GUIArticleLink=""
 RSSErrPopup="警告！タイトルとリンクの数が一致しません。\n・RSSが破損している\n・非サポート形式(RSS1.0/RSS2.0/RSS0.9以外)\nなどの可能性があります。\nrss.txtの、以下の行数目のURLを削除してリトライしてください。\n\nWarning! The number of links does not match the title.\n・RSS is corrupted.\n・Unsupported format (other than RSS1.0/RSS2.0/RSS0.9)\nThere are several possibilities, such as\nIn rss.txt, delete the following line number URL and retry.\n>>"
 screen 1,600,400
-gosub *SetColor
 title RSSAppName+" "+RSSAppVer
-if VARIABLE_CONF_MDI=0{GetWindowLong hWnd,-16:SetWindowLong hWnd,-16,stat|$00CF0000:SetParent hWnd,hClient:gsel 8:width ,,0,0}
+DoSetColor
+DoSetPatch 1
+
 gsel 1
 GetWindowLong hwnd, -16
 SetWindowLong hwnd, -16, stat - $20000
@@ -47,7 +49,7 @@ pos 500,365:button gosub "Close",*RSSerEND
 objenable 2,0
 GUIArticleLinkLast=0
 GUIArticleLinkVar=""
-if FileCheck(""+dir_exe+"\\rss.txt")=1{dialog "rss.txtの定義ファイルがないです。\n取得するRSSサイトのリストが必要です。\nYou don't have the rss.txt def file.\nNeed a list of RSS sites to retrieve.\n":goto *RSSerEND}
+if FileCheck(""+dir_cur+"/rss.txt")=1{dialog "./rss.txt is empty or isn't exist.":goto *RSSerEND}
 gosub *RSS_Gets
 return
 
@@ -57,7 +59,7 @@ title RSSAppName+" "+RSSAppVer+" - [Get]"
 objprm 0,GUIList
 Nbuf=""
 notesel Nbuf
-noteload ""+dir_exe+"\\rss.txt"
+noteload ""+dir_cur+"/rss.txt"
 if RSSTextGet>(notemax-1){goto *RSS_GUIS}
 noteget URL,RSSTextGet
 
@@ -214,4 +216,5 @@ sdim RssResultData
 sdim nbuf
 sdim GUIList
 sdim RssResultURL
+IShwndBit(1)=0
 return

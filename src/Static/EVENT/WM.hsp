@@ -4,17 +4,26 @@
 	update_statusbar
 	GetClientRect hWnd0, varptr(rc)
 	if ( IsWindowVisible(hEditUrl) ){
-		MoveWindow hEditUrl, 20+(DPISETPOS*4), 25+(DPISETPOS*4), rc(2) - 22 - (DPISETPOS*2), 20+(DPISETPOS*5), 0
-		MoveWindow hTab, 0, 0, rc(2), 24+(DPISETPOS*5), 0
+		MoveWindow hTab     , 075, 00,  rc(2)-75,24, 0
+		MoveWindow hFrontURL, 120, 25, ginfo(12),30, 0
 		p1 = 44
 	}
 	else { p1 = 0 }
 	gosub *TAB_GETINFO
 	if ( pTabInfo ){
-		if VARIABLE_CONF_STBAR!=0{tmp=0}else{tmp=1}
-		WebView2_Size dpCtrl(0), 0, p1+(DPISETPOS*10), rc(2), rc(3)-(tmp*25)-(DPISETPOS*2)
+		color 255,255,255:boxf
+		if getSini("IsEnableSTBAR")!=0{tmp=0}else{tmp=1}
+		WebView2_Size dpCtrl(0), 0, 55, rc(2), rc(3)-(tmp*25)
 	}
 
+	sendmsg hTab,TCM_GETITEMCOUNT, 0, 0
+	if stat=0{return}
+	
+	if (ginfo(12)-100)/stat < 160{
+		sendmsg hTab,0x1329,0,(ginfo(12)-100)/stat
+	}else{
+		sendmsg hTab,0x1329,9,160
+	}
 	return
 
 *WM_CLOSE
@@ -65,3 +74,12 @@
 	if (wparam)=1 {gosub *WM_SIZE:gosub *TAB_UPDATE}
 	if (wparam)=2 {gosub *WM_SIZE:gosub *TAB_UPDATE}
 	return
+
+*WM_hFrontURLColorSet
+if lparam = hFrontURL {
+    setBkMode wparam, 2
+    SetTextColor wparam, RGB(000, 000, 000)
+    SetBkColor   wparam, RGB(192, 192, 192)
+    return hBrush_fu
+}
+return
