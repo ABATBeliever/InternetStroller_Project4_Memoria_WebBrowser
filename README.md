@@ -1,8 +1,17 @@
 # InternetStroller Memoria
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Version](https://img.shields.io/badge/version-1.6.0.0-green.svg)
+![Version](https://img.shields.io/badge/version-1.6.0-green.svg)
 ![Version](https://img.shields.io/badge/Language-HSP3.6-yellow.svg)
+
+-----------------------------------------------------------
+# 注意！
+このリポジトリは廃止され、アーカイブされています
+
+InternetStroller 4.x.x.x は<a href="https://github.com/ABATBeliever/InternetStroller">こちら</a>から
+(3.xの)1.6.0や2.0.0からの移行は、ISMemoriaアップデーターで自動配信されます。
+
+-----------------------------------------------------------
 
 ## 概要
 InternetStrollerMemoria(ISMemoria)はWebViewを利用したHSP製ブラウザです。
