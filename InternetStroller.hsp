@@ -12,7 +12,7 @@
 	StatusBar32.hsp		Copyright(C) 窓月らら				-
 	sample2				Copyright(C) hiro					-
 
-	HSP 3.7 RC1 でビルドしてください！
+	HSP 3.7 でビルドしてください！
 
 */
 #packopt version "Build.ini"	//詳細
@@ -25,10 +25,10 @@
 
 #define ISName "InternetStroller Memoria"
 #define ISDeepVersion "Stable"
-#define ISCommonVer "3200"
-#define ISBuildNumber "2.0.0.0"
+#define ISCommonVer "3201"
+#define ISBuildNumber "2.0.1.0"
 #define ISBuildDay ""+__date__+" "+__time__
-ISVersion=ISDeepVersion+" Ver 2.0.0.0"
+ISVersion=ISDeepVersion+" Ver 2.0.1.0"
 hBrowser=hwnd
 hClient=hWnd
 title ISName
@@ -168,4 +168,4 @@ repeat 6
 loop
 
 WebView2_Release pEnv
-end:end		//3.6までは終了をすり抜けるバグあり
+end:end		//3.6までは終了をすり抜けるバグあり5

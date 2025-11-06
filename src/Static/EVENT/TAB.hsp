@@ -30,6 +30,10 @@
 	if instr(bufTmp,0,"ftps://")=0		{set_statusbar 2,bufTmp:return}
 	if instr(bufTmp,0,"sftp://")=0		{set_statusbar 2,bufTmp:return}
 	if instr(bufTmp,0,"view-source:")=0	{set_statusbar 2,bufTmp:return}
+	if instr(bufTmp,0,"localhost")=0	{set_statusbar 2,bufTmp:return}
+	if instr(bufTmp,0,"data:")=0		{set_statusbar 2,bufTmp:return}
+	if instr(bufTmp,0,"blob:")=0		{set_statusbar 2,bufTmp:return}
+	if instr(bufTmp,0,"about:")=0		{set_statusbar 2,bufTmp:return}
 	return
 
 *TAB_GETINFO2

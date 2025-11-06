@@ -94,6 +94,12 @@ HSPブラウザの存在を知るきっかけとなった、Krone(Look Explorer)並びにYotiosoft氏、
 		return
 	}
 	details=getData(getSini("IsCheckUpdateDetailsURL"))
+	if instr(check,0,"-1")=0{
+		wvurl = getSini("IsGETUpdateURL")
+		gosub *CMD_WV_RUN
+		dialog "ISMemoriaはサポートが終了されました。\n次期シリーズ「InternetStroller Syncria」に移行してください。\n今後ISMemoriaはバグ・脆弱性を含め修正されません。",1,"End Of Life"
+		return
+	}
 	split check,"=",tmp,check
 	if instr(check,0,str(ISCommonVer))!=0{
 		dialog "最新版がリリースされています\nNew versions available\n\n===========================\n"+ISCommonVer+"=>"+check+"===========================\n\n"+details//バージョンが同じでない
@@ -357,16 +363,20 @@ if wparam = 13 {
 	objsel -1
 	if stat=7{
 		cnvstoa bufTmp,frontURL
-		if instr(bufTmp,0,"https://")=0{tmp="true"}		//これらに含まれるならサイトとして
-		if instr(bufTmp,0,"http://")=0{tmp="true"}		//でなければ検索
-		if instr(bufTmp,0,"edge://")=0{tmp="true"}
-		if instr(bufTmp,0,"file://")=0{tmp="true"}
-		if instr(bufTmp,0,"mailto://")=0{tmp="true"}
-		if instr(bufTmp,0,"ftp://")=0{bufTmp="https://"+bufTmp:tmp="true"}
-		if instr(bufTmp,0,"ftps://")=0{bufTmp="https://"+bufTmp:tmp="true"}
-		if instr(bufTmp,0,"sftp://")=0{bufTmp="https://"+bufTmp:tmp="true"}
-		if instr(bufTmp,0,"view-source:")=0{bufTmp="https://"+bufTmp:tmp="true"}
-		if getSini("IsEnableAUTOSEARCH")!=0{tmp="true"}
+		if instr(bufTmp,0,"https://")=0		{tmp="true"}		//これらに含まれるならサイトとして
+		if instr(bufTmp,0,"http://")=0		{tmp="true"}		//でなければ検索
+		if instr(bufTmp,0,"edge://")=0		{tmp="true"}
+		if instr(bufTmp,0,"file://")=0		{tmp="true"}
+		if instr(bufTmp,0,"mailto://")=0	{tmp="true"}
+		if instr(bufTmp,0,"ftp://")=0		{bufTmp="https://"+bufTmp:tmp="true"}
+		if instr(bufTmp,0,"ftps://")=0		{bufTmp="https://"+bufTmp:tmp="true"}
+		if instr(bufTmp,0,"sftp://")=0		{bufTmp="https://"+bufTmp:tmp="true"}
+		if instr(bufTmp,0,"view-source:")=0	{bufTmp="https://"+bufTmp:tmp="true"}
+		if instr(bufTmp,0,"localhost")=0	{bufTmp="http://"+bufTmp :tmp="true"}
+		if instr(bufTmp,0,"data:")=0		{tmp="true"}
+		if instr(bufTmp,0,"blob:")=0		{tmp="true"}
+		if instr(bufTmp,0,"about:")=0		{tmp="true"}
+		if getSini("IsEnableAUTOSEARCH")!=0	{tmp="true"}
 		if tmp="true"{
 			SetWindowTextW hEditUrl, frontURL:GetWindowTextW hEditUrl, varptr(bufTmp), p1:ret = CCall2(dpCtrl(1), WV2_Navigate, 1, varptr(bufTmp))
 		}else{
