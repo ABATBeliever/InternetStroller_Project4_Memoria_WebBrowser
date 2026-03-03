@@ -8,8 +8,10 @@
 # 注意！
 このリポジトリは廃止され、アーカイブされています
 
-InternetStroller 4.x.x.x は<a href="https://github.com/ABATBeliever/InternetStroller">こちら</a>から
-(3.xの)1.6.0や2.0.0からの移行は、ISMemoriaアップデーターで自動配信されます。
+InternetStroller Memoriaは正式に開発・サポートを終了しました。
+今後InternetStroller 系のブラウザが開発される可能性はあるものの、未定です。
+
+[VELAブラウザ](https://github.com/ABATBeliever/VELABrowser2x)に移行することをお勧めします。
 
 -----------------------------------------------------------
 
